@@ -1,0 +1,29 @@
+"use client";
+
+import SearchBar from "@/components/dashboard/SearchBar";
+import HeaderSchedule from "@/components/schedule/HeaderSchedule";
+import ScheduleTable from "@/components/schedule/ScheduleTable";
+
+export default function ProfessorPage() {
+  return (
+    <>
+      {/* Main content */}
+      <div className="flex-1 p-6">
+        <HeaderSchedule/>
+
+        <div className="my-6">
+                  <SearchBar/>
+        </div>
+        {/* Tabla de Profesores */}
+        <div className="my-6">
+          <ScheduleTable />
+        </div>
+
+        {/* Reportes */}
+
+      </div>
+
+
+    </>
+  );
+}
