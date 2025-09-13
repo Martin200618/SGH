@@ -1,10 +1,10 @@
 "use client";
 
 import SearchBar from "@/components/dashboard/SearchBar";
-import HeaderSchedule from "@/components/schedule/HeaderSchedule";
-import ScheduleTable from "@/components/schedule/ScheduleTable";
+import HeaderSchedule from "@/components/schedule/scheduleCourse/HeaderSchedule";
+import ScheduleTable from "@/components/schedule/scheduleCourse/ScheduleTable";
 
-export default function ProfessorPage() {
+export default function ScheduleCoursePage() {
   return (
     <>
       {/* Main content */}

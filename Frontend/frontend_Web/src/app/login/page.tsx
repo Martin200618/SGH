@@ -71,8 +71,10 @@ export default function LoginPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="mb-4 bg-red-100 text-red-700 px-4 py-2 rounded-md shadow-lg border border-red-300"
-            style={{ position: "absolute", top: "20%" }}
+            className="fixed top-5 left-1/2 -translate-x-1/2 z-50 
+                 bg-red-100 text-red-700 px-4 py-2 
+                 rounded-lg shadow-md border border-red-300 
+                 text-sm sm:text-base max-w-xs sm:max-w-md text-center"
           >
             {errorMessage}
           </motion.div>
