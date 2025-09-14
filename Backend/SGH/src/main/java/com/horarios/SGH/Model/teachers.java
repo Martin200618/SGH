@@ -13,9 +13,6 @@ public class teachers {
     @Column(name="teacherName", length = 100, nullable=false)
     private String teacherName;
 
-    // Se elimina la relación directa con subjects.
-    // La relación docente–materia ahora vive en TeacherSubject.
-
     public teachers() {}
 
     public teachers(int id, String teacherName) {

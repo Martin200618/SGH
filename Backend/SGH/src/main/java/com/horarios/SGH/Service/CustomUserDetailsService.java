@@ -2,12 +2,10 @@ package com.horarios.SGH.Service;
 
 import com.horarios.SGH.Model.users;
 import com.horarios.SGH.Repository.Iusers;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.userdetails.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
@@ -16,7 +14,8 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final Iusers userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public CustomUserDetailsService(Iusers userRepository, PasswordEncoder passwordEncoder) {
+    public CustomUserDetailsService(Iusers userRepository,
+                                    PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -24,14 +23,16 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
+        // 1) Intentar cargar desde BD
         users u = userRepository.findByUserName(username).orElse(null);
         if (u != null) {
             return User.withUsername(u.getUserName())
-                    .password(u.getPassword())
-                    .authorities(List.of())
+                    .password(u.getPassword()) // BCrypt en BD
+                    .authorities(List.of())    // ajusta roles si los manejas
                     .build();
         }
 
+        // 2) Fallback local para "master" SOLO si no existe en BD
         if ("master".equals(username)) {
             return User.withUsername("master")
                     .password(passwordEncoder.encode("Master$2025!"))

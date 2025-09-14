@@ -1,7 +1,6 @@
 package com.horarios.SGH.Service;
 
 import com.horarios.SGH.DTO.CourseDTO;
-import com.horarios.SGH.Exception.ResourceNotFoundException;
 import com.horarios.SGH.Model.TeacherSubject;
 import com.horarios.SGH.Model.courses;
 import com.horarios.SGH.Model.subjects;
@@ -33,65 +32,79 @@ public class CourseService {
         entity.setTeacherSubject(ts);
 
         if (dto.getGradeDirectorId() != null) {
-            teachers director = teacherRepo.findById(dto.getGradeDirectorId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Docente", dto.getGradeDirectorId()));
+            teachers director = teacherRepo.findById(dto.getGradeDirectorId()).orElseThrow();
             entity.setGradeDirector(director);
         }
 
         courses saved = courseRepo.save(entity);
-        return toDTO(saved);
+        dto.setCourseId(saved.getId());
+        dto.setTeacherSubjectId(ts != null ? ts.getId() : null);
+        return dto;
     }
 
     public List<CourseDTO> getAll() {
-        return courseRepo.findAll().stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+        return courseRepo.findAll().stream().map(c -> {
+            CourseDTO dto = new CourseDTO();
+            dto.setCourseId(c.getId());
+            dto.setCourseName(c.getCourseName());
+            if (c.getTeacherSubject() != null) {
+                dto.setTeacherSubjectId(c.getTeacherSubject().getId());
+                dto.setTeacherId(c.getTeacherSubject().getTeacher().getId());
+                dto.setSubjectId(c.getTeacherSubject().getSubject().getId());
+            }
+            dto.setGradeDirectorId(c.getGradeDirector() != null ? c.getGradeDirector().getId() : null);
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     public CourseDTO getById(int id) {
-        courses course = courseRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Curso", id));
-        return toDTO(course);
+        return courseRepo.findById(id).map(c -> {
+            CourseDTO dto = new CourseDTO();
+            dto.setCourseId(c.getId());
+            dto.setCourseName(c.getCourseName());
+            if (c.getTeacherSubject() != null) {
+                dto.setTeacherSubjectId(c.getTeacherSubject().getId());
+                dto.setTeacherId(c.getTeacherSubject().getTeacher().getId());
+                dto.setSubjectId(c.getTeacherSubject().getSubject().getId());
+            }
+            dto.setGradeDirectorId(c.getGradeDirector() != null ? c.getGradeDirector().getId() : null);
+            return dto;
+        }).orElse(null);
     }
 
     public CourseDTO update(int id, CourseDTO dto) {
-        courses entity = courseRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Curso", id));
+        courses entity = courseRepo.findById(id).orElse(null);
+        if (entity == null) return null;
 
         entity.setCourseName(dto.getCourseName());
         TeacherSubject ts = resolveTeacherSubject(dto);
         entity.setTeacherSubject(ts);
 
         if (dto.getGradeDirectorId() != null) {
-            teachers director = teacherRepo.findById(dto.getGradeDirectorId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Docente", dto.getGradeDirectorId()));
+            teachers director = teacherRepo.findById(dto.getGradeDirectorId()).orElseThrow();
             entity.setGradeDirector(director);
         } else {
             entity.setGradeDirector(null);
         }
 
         courses updated = courseRepo.save(entity);
-        return toDTO(updated);
+        dto.setCourseId(updated.getId());
+        dto.setTeacherSubjectId(ts != null ? ts.getId() : null);
+        return dto;
     }
 
     public void delete(int id) {
-        if (!courseRepo.existsById(id)) {
-            throw new ResourceNotFoundException("Curso", id);
-        }
         courseRepo.deleteById(id);
     }
 
     private TeacherSubject resolveTeacherSubject(CourseDTO dto) {
         if (dto.getTeacherSubjectId() != null) {
-            return teacherSubjectRepo.findById(dto.getTeacherSubjectId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Relación docente-materia", dto.getTeacherSubjectId()));
+            return teacherSubjectRepo.findById(dto.getTeacherSubjectId()).orElseThrow();
         } else if (dto.getTeacherId() != null && dto.getSubjectId() != null) {
             return teacherSubjectRepo.findByTeacher_IdAndSubject_Id(dto.getTeacherId(), dto.getSubjectId())
                     .orElseGet(() -> {
-                        teachers t = teacherRepo.findById(dto.getTeacherId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Docente", dto.getTeacherId()));
-                        subjects s = subjectRepo.findById(dto.getSubjectId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Materia", dto.getSubjectId()));
+                        teachers t = teacherRepo.findById(dto.getTeacherId()).orElseThrow();
+                        subjects s = subjectRepo.findById(dto.getSubjectId()).orElseThrow();
                         TeacherSubject newTs = new TeacherSubject();
                         newTs.setTeacher(t);
                         newTs.setSubject(s);
@@ -99,18 +112,5 @@ public class CourseService {
                     });
         }
         return null;
-    }
-
-    private CourseDTO toDTO(courses c) {
-        CourseDTO dto = new CourseDTO();
-        dto.setCourseId(c.getId());
-        dto.setCourseName(c.getCourseName());
-        if (c.getTeacherSubject() != null) {
-            dto.setTeacherSubjectId(c.getTeacherSubject().getId());
-            dto.setTeacherId(c.getTeacherSubject().getTeacher().getId());
-            dto.setSubjectId(c.getTeacherSubject().getSubject().getId());
-        }
-        dto.setGradeDirectorId(c.getGradeDirector() != null ? c.getGradeDirector().getId() : null);
-        return dto;
     }
 }

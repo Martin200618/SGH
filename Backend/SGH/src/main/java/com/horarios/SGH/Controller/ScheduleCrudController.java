@@ -1,6 +1,5 @@
 package com.horarios.SGH.Controller;
 
-import com.horarios.SGH.DTO.ApiResponse;
 import com.horarios.SGH.DTO.ScheduleDTO;
 import com.horarios.SGH.Service.ScheduleService;
 import lombok.RequiredArgsConstructor;
@@ -19,44 +18,24 @@ public class ScheduleCrudController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR')")
-    public ApiResponse<?> crearHorario(@RequestBody List<ScheduleDTO> asignaciones,
-                                                      Authentication auth) {
-        try {
-            List<ScheduleDTO> horario = scheduleService.crearHorario(asignaciones, auth.getName());
-            return ApiResponse.success("Horario creado exitosamente", horario);
-        } catch (Exception e) {
-            return ApiResponse.error(e.getMessage());
-        }
+    public List<ScheduleDTO> crearHorario(@RequestBody List<ScheduleDTO> asignaciones,
+                                          Authentication auth) {
+        return scheduleService.crearHorario(asignaciones, auth.getName());
     }
 
     @GetMapping("/{name}")
     @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR')")
-    public ApiResponse<?> obtenerPorNombre(@PathVariable String name) {
-        try {
-            List<ScheduleDTO> horarios = scheduleService.obtenerPorNombre(name);
-            return ApiResponse.success("Horarios obtenidos exitosamente", horarios);
-        } catch (Exception e) {
-            return ApiResponse.error(e.getMessage());
-        }
+    public List<ScheduleDTO> obtenerPorNombre(@PathVariable String name) {
+        return scheduleService.obtenerPorNombre(name);
     }
 
     @GetMapping("/by-course/{id}")
-    public ApiResponse<?> getByCourse(@PathVariable Integer id) {
-        try {
-            List<ScheduleDTO> horarios = scheduleService.obtenerPorCurso(id);
-            return ApiResponse.success("Horarios por curso obtenidos exitosamente", horarios);
-        } catch (Exception e) {
-            return ApiResponse.error(e.getMessage());
-        }
+    public List<ScheduleDTO> getByCourse(@PathVariable Integer id) {
+        return scheduleService.obtenerPorCurso(id);
     }
 
     @GetMapping("/by-teacher/{id}")
-    public ApiResponse<?> getByTeacher(@PathVariable Integer id) {
-        try {
-            List<ScheduleDTO> horarios = scheduleService.obtenerPorProfesor(id);
-            return ApiResponse.success("Horarios por profesor obtenidos exitosamente", horarios);
-        } catch (Exception e) {
-            return ApiResponse.error(e.getMessage());
-        }
+    public List<ScheduleDTO> getByTeacher(@PathVariable Integer id) {
+        return scheduleService.obtenerPorProfesor(id);
     }
 }

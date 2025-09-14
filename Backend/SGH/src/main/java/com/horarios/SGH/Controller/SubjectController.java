@@ -1,10 +1,14 @@
 package com.horarios.SGH.Controller;
 
-import com.horarios.SGH.DTO.ApiResponse;
 import com.horarios.SGH.DTO.SubjectDTO;
+import com.horarios.SGH.DTO.responseDTO;
 import com.horarios.SGH.Service.SubjectService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,53 +20,63 @@ public class SubjectController {
 
     private final SubjectService service;
 
+    // Crear materia
     @PostMapping
-    public ApiResponse<?> create(@Valid @RequestBody SubjectDTO dto) {
+    public ResponseEntity<responseDTO> create(@Valid @RequestBody SubjectDTO dto) {
         try {
-            SubjectDTO createdSubject = service.create(dto);
-            return ApiResponse.success("Materia creada exitosamente", createdSubject);
+            service.create(dto);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new responseDTO("OK", "Materia creada correctamente"));
         } catch (Exception e) {
-            return ApiResponse.error(e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(new responseDTO("ERROR", e.getMessage()));
         }
     }
 
+    // Obtener todas las materias
     @GetMapping
-    public ApiResponse<?> getAll() {
-        try {
-            List<SubjectDTO> subjects = service.getAll();
-            return ApiResponse.success("Materias obtenidas exitosamente", subjects);
-        } catch (Exception e) {
-            return ApiResponse.error(e.getMessage());
-        }
+    public ResponseEntity<List<SubjectDTO>> getAll() {
+        List<SubjectDTO> subjects = service.getAll();
+        return ResponseEntity.ok(subjects);
     }
 
+    // Obtener materia por ID
     @GetMapping("/{id}")
-    public ApiResponse<?> getById(@PathVariable int id) {
+    public ResponseEntity<responseDTO> getById(@PathVariable int id) {
+        if (id <= 0) {
+            return ResponseEntity.badRequest().body(new responseDTO("ERROR", "ID inválido o no encontrado"));
+        }
         try {
-            SubjectDTO subject = service.getById(id);
-            return ApiResponse.success("Materia encontrada", subject);
+            service.getById(id); // Solo ejecuta, no guarda variable
+            return ResponseEntity.ok(new responseDTO("OK", "Materia encontrada"));
         } catch (Exception e) {
-            return ApiResponse.error("Materia no encontrada");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new responseDTO("ERROR", "Materia no encontrada"));
         }
     }
 
+    // Actualizar materia
     @PutMapping("/{id}")
-    public ApiResponse<?> update(@PathVariable int id, @Valid @RequestBody SubjectDTO dto) {
+    public ResponseEntity<responseDTO> update(@PathVariable int id, @Valid @RequestBody SubjectDTO dto) {
         try {
-            SubjectDTO updatedSubject = service.update(id, dto);
-            return ApiResponse.success("Materia actualizada exitosamente", updatedSubject);
+            service.update(id, dto);
+            return ResponseEntity.ok(new responseDTO("OK", "Materia actualizada correctamente"));
         } catch (Exception e) {
-            return ApiResponse.error(e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(new responseDTO("ERROR", e.getMessage()));
         }
     }
 
+    // Eliminar materia
     @DeleteMapping("/{id}")
-    public ApiResponse<?> delete(@PathVariable int id) {
+    public ResponseEntity<responseDTO> delete(@PathVariable int id) {
         try {
             service.delete(id);
-            return ApiResponse.success("Materia eliminada exitosamente");
+            return ResponseEntity.ok(new responseDTO("OK", "Materia eliminada correctamente"));
         } catch (Exception e) {
-            return ApiResponse.error("Materia no encontrada");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new responseDTO("ERROR", "Materia no encontrada"));
         }
     }
+
 }

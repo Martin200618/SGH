@@ -1,7 +1,6 @@
 package com.horarios.SGH.Service;
 
 import com.horarios.SGH.DTO.ScheduleHistoryDTO;
-import com.horarios.SGH.Exception.BusinessException;
 import com.horarios.SGH.Model.schedule_history;
 import com.horarios.SGH.Repository.IScheduleHistory;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +32,8 @@ public class ScheduleGenerationService {
         history.setStatus("RUNNING");
         history.setMessage("Iniciando generación");
         history.setTotalGenerated(0);
+
+        // Parámetros de ejecución
         history.setPeriodStart(request.getPeriodStart());
         history.setPeriodEnd(request.getPeriodEnd());
         history.setDryRun(request.isDryRun());
@@ -43,30 +44,25 @@ public class ScheduleGenerationService {
 
         try {
             long days = ChronoUnit.DAYS.between(request.getPeriodStart(), request.getPeriodEnd()) + 1;
-            if (days < 0) {
-                throw new BusinessException("El rango de fechas es inválido");
-            }
+            if (days < 0) throw new IllegalArgumentException("El rango de fechas es inválido");
 
             int totalGenerated = 0;
 
             if (!request.isDryRun()) {
-                // Lógica real de generación de horarios iría aquí
-                // Por ahora solo contamos los días como ejemplo
+                // Hook de generación real:
+                // Persistir tus entidades de horario aquí cuando estén listas.
                 for (int i = 0; i < days; i++) {
-                    // La variable 'day' se calcula pero no se usa en este ejemplo
-                    // En una implementación real, aquí generarías los horarios para cada día
-                    LocalDate currentDay = request.getPeriodStart().plusDays(i);
-                    // generarHorariosParaDia(currentDay); // ← Esto iría en una implementación real
-                    totalGenerated += 1; // Ejemplo: 1 slot por día
+                    LocalDate day = request.getPeriodStart().plusDays(i);
+                    // persistSchedule(day, ...);
+                    totalGenerated += 1; // ejemplo: 1 slot por día
                 }
             } else {
-                // Modo simulación: solo contar los días
                 totalGenerated = (int) days;
             }
 
             history.setStatus("SUCCESS");
             history.setTotalGenerated(totalGenerated);
-            history.setMessage("Generación completada - " + totalGenerated + " horarios generados");
+            history.setMessage("Generación completada");
             history.setExecutedAt(LocalDateTime.now());
             historyRepository.save(history);
         } catch (Exception ex) {
@@ -74,7 +70,6 @@ public class ScheduleGenerationService {
             history.setMessage(ex.getMessage() != null ? ex.getMessage() : "Error en la generación");
             history.setExecutedAt(LocalDateTime.now());
             historyRepository.save(history);
-            throw new BusinessException("Error durante la generación: " + ex.getMessage());
         }
 
         return toDTO(history);
@@ -88,17 +83,20 @@ public class ScheduleGenerationService {
         return new PageImpl<>(content, pageable, histories.getTotalElements());
     }
 
+    // -------------------- Privados --------------------
+
     private void validate(ScheduleHistoryDTO r) {
         if (r.getPeriodStart() == null || r.getPeriodEnd() == null) {
-            throw new BusinessException("periodStart y periodEnd son obligatorios");
+            throw new IllegalArgumentException("periodStart y periodEnd son obligatorios");
         }
         if (r.getPeriodEnd().isBefore(r.getPeriodStart())) {
-            throw new BusinessException("periodEnd no puede ser anterior a periodStart");
+            throw new IllegalArgumentException("periodEnd no puede ser anterior a periodStart");
         }
         long days = ChronoUnit.DAYS.between(r.getPeriodStart(), r.getPeriodEnd()) + 1;
         if (days > 366) {
-            throw new BusinessException("El rango máximo permitido es 366 días");
+            throw new IllegalArgumentException("El rango máximo permitido es 366 días");
         }
+        // Si !r.isForce(): agregar validación de solapamientos según tu regla si aplica.
     }
 
     private ScheduleHistoryDTO toDTO(schedule_history h) {

@@ -1,7 +1,6 @@
 package com.horarios.SGH.Service;
 
 import com.horarios.SGH.DTO.TeacherDTO;
-import com.horarios.SGH.Exception.ResourceNotFoundException;
 import com.horarios.SGH.Model.TeacherSubject;
 import com.horarios.SGH.Model.subjects;
 import com.horarios.SGH.Model.teachers;
@@ -22,15 +21,17 @@ public class TeacherService {
     private final Iteachers teacherRepo;
     private final TeacherSubjectRepository teacherSubjectRepo;
 
+    /**
+     * Crea un docente. Si se envía subjectId, crea también la relación TeacherSubject.
+     */
     public TeacherDTO create(TeacherDTO dto) {
         teachers teacher = new teachers();
         teacher.setTeacherName(dto.getTeacherName());
         teachers savedTeacher = teacherRepo.save(teacher);
 
+        // Si viene subjectId, creamos la relación en TeacherSubject
         if (dto.getSubjectId() > 0) {
-            subjects subject = subjectRepo.findById(dto.getSubjectId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Materia", dto.getSubjectId()));
-            
+            subjects subject = subjectRepo.findById(dto.getSubjectId()).orElseThrow();
             TeacherSubject ts = new TeacherSubject();
             ts.setTeacher(savedTeacher);
             ts.setSubject(subject);
@@ -41,8 +42,31 @@ public class TeacherService {
         return dto;
     }
 
+    /**
+     * Lista todos los docentes. Si tienen relaciones TeacherSubject, devuelve el primer subjectId encontrado.
+     */
     public List<TeacherDTO> getAll() {
         return teacherRepo.findAll().stream().map(t -> {
+            TeacherDTO dto = new TeacherDTO();
+            dto.setTeacherId(t.getId());
+            dto.setTeacherName(t.getTeacherName());
+
+            // Compatibilidad: si existe relación TeacherSubject, usamos el primer subjectId
+            List<TeacherSubject> tsList = teacherSubjectRepo.findByTeacher_Id(t.getId());
+            if (!tsList.isEmpty()) {
+                dto.setSubjectId(tsList.get(0).getSubject().getId());
+            } else {
+                dto.setSubjectId(0);
+            }
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene un docente por ID.
+     */
+    public TeacherDTO getById(int id) {
+        return teacherRepo.findById(id).map(t -> {
             TeacherDTO dto = new TeacherDTO();
             dto.setTeacherId(t.getId());
             dto.setTeacherName(t.getTeacherName());
@@ -54,37 +78,22 @@ public class TeacherService {
                 dto.setSubjectId(0);
             }
             return dto;
-        }).collect(Collectors.toList());
+        }).orElse(null);
     }
 
-    public TeacherDTO getById(int id) {
-        teachers teacher = teacherRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Docente", id));
-        
-        TeacherDTO dto = new TeacherDTO();
-        dto.setTeacherId(teacher.getId());
-        dto.setTeacherName(teacher.getTeacherName());
-
-        List<TeacherSubject> tsList = teacherSubjectRepo.findByTeacher_Id(teacher.getId());
-        if (!tsList.isEmpty()) {
-            dto.setSubjectId(tsList.get(0).getSubject().getId());
-        } else {
-            dto.setSubjectId(0);
-        }
-        return dto;
-    }
-
+    /**
+     * Actualiza un docente y su relación con materia.
+     */
     public TeacherDTO update(int id, TeacherDTO dto) {
-        teachers teacher = teacherRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Docente", id));
+        teachers teacher = teacherRepo.findById(id).orElse(null);
+        if (teacher == null) return null;
 
         teacher.setTeacherName(dto.getTeacherName());
         teachers updatedTeacher = teacherRepo.save(teacher);
 
+        // Actualizar relación TeacherSubject
         if (dto.getSubjectId() > 0) {
-            subjects subject = subjectRepo.findById(dto.getSubjectId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Materia", dto.getSubjectId()));
-            
+            subjects subject = subjectRepo.findById(dto.getSubjectId()).orElseThrow();
             List<TeacherSubject> tsList = teacherSubjectRepo.findByTeacher_Id(id);
             if (tsList.isEmpty()) {
                 TeacherSubject ts = new TeacherSubject();
@@ -97,6 +106,7 @@ public class TeacherService {
                 teacherSubjectRepo.save(ts);
             }
         } else {
+            // Si subjectId = 0, eliminamos relaciones
             List<TeacherSubject> tsList = teacherSubjectRepo.findByTeacher_Id(id);
             teacherSubjectRepo.deleteAll(tsList);
         }
@@ -106,20 +116,18 @@ public class TeacherService {
     }
 
     public void delete(int id) {
-        if (!teacherRepo.existsById(id)) {
-            throw new ResourceNotFoundException("Docente", id);
-        }
-        
+        // Eliminar relaciones TeacherSubject primero
         List<TeacherSubject> tsList = teacherSubjectRepo.findByTeacher_Id(id);
         teacherSubjectRepo.deleteAll(tsList);
         teacherRepo.deleteById(id);
     }
 
+    /**
+     * Lista docentes que imparten una materia por nombre.
+     */
     public List<TeacherDTO> getTeachersBySubjectName(String subjectName) {
         subjects subject = subjectRepo.findBySubjectName(subjectName);
-        if (subject == null) {
-            throw new ResourceNotFoundException("Materia", subjectName);
-        }
+        if (subject == null) return List.of();
 
         return teacherSubjectRepo.findBySubject_Id(subject.getId())
                 .stream()

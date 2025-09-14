@@ -1,6 +1,5 @@
 package com.horarios.SGH.Controller;
 
-import com.horarios.SGH.DTO.ApiResponse;
 import com.horarios.SGH.DTO.ScheduleHistoryDTO;
 import com.horarios.SGH.Service.ScheduleGenerationService;
 import com.horarios.SGH.Service.ScheduleExportService;
@@ -23,25 +22,20 @@ public class ScheduleController {
 
     @PostMapping("/generate")
     @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR')")
-    public ApiResponse<?> generate(@RequestBody ScheduleHistoryDTO request, Authentication auth) {
-        try {
-            ScheduleHistoryDTO result = generationService.generate(request, auth.getName());
-            return ApiResponse.success("Horario generado exitosamente", result);
-        } catch (Exception e) {
-            return ApiResponse.error(e.getMessage());
-        }
+    public ScheduleHistoryDTO generate(
+            @RequestBody ScheduleHistoryDTO request,
+            Authentication auth
+    ) {
+        return generationService.generate(request, auth.getName());
     }
 
     @GetMapping("/history")
     @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR')")
-    public ApiResponse<?> history(@RequestParam(defaultValue = "0") int page,
-                                                        @RequestParam(defaultValue = "10") int size) {
-        try {
-            Page<ScheduleHistoryDTO> history = generationService.history(page, size);
-            return ApiResponse.success("Historial obtenido exitosamente", history);
-        } catch (Exception e) {
-            return ApiResponse.error("Error al obtener historial");
-        }
+    public Page<ScheduleHistoryDTO> history(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return generationService.history(page, size);
     }
     
     // PDF por curso

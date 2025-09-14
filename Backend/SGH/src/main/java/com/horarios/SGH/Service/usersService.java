@@ -1,38 +1,38 @@
 package com.horarios.SGH.Service;
 
-import com.horarios.SGH.Exception.BusinessException;
-import com.horarios.SGH.Exception.ResourceNotFoundException;
-import com.horarios.SGH.Model.users;
-import com.horarios.SGH.Repository.Iusers;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import com.horarios.SGH.Model.users;
+import com.horarios.SGH.Repository.Iusers;
 
 @Service
 public class usersService {
 
-    private final Iusers usersRepository;
-    private final PasswordEncoder passwordEncoder;
+    @Autowired
+    private Iusers usersRepository;
 
-    public usersService(Iusers usersRepository, PasswordEncoder passwordEncoder) {
-        this.usersRepository = usersRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
+    // Obtener usuario por ID
     public Optional<users> findById(int userId) {
-        return usersRepository.findById(userId);
+        try {
+            return usersRepository.findById(userId);
+        } catch (Exception e) {
+            throw new RuntimeException("Error al obtener el usuario con ID: " + userId + ", Error: " + e.getMessage());
+        }
     }
 
+    // Validar inicio de sesión
     public String login(String userName, String password) {
         Optional<users> user = usersRepository.findByUserName(userName);
 
         if (!user.isPresent()) {
-            throw new ResourceNotFoundException("Usuario", userName);
+            return "Usuario no encontrado";
         }
 
-        if (!passwordEncoder.matches(password, user.get().getPassword())) {
-            throw new BusinessException("Contraseña incorrecta");
+        if (!user.get().getPassword().equals(password)) {
+            return "Contraseña incorrecta";
         }
 
         return "Inicio de sesión exitoso";

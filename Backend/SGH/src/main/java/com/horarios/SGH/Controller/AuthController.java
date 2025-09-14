@@ -1,39 +1,40 @@
 package com.horarios.SGH.Controller;
 
-import com.horarios.SGH.DTO.ApiResponse;
 import com.horarios.SGH.DTO.LoginRequestDTO;
 import com.horarios.SGH.DTO.LoginResponseDTO;
 import com.horarios.SGH.DTO.RegisterRequestDTO;
 import com.horarios.SGH.Service.AuthService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
-@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService service;
 
+    public AuthController(AuthService service) {
+        this.service = service;
+    }
+
     @PostMapping("/login")
-    public ApiResponse<?> login(@Valid @RequestBody LoginRequestDTO request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequestDTO request) {
         try {
             LoginResponseDTO resp = service.login(request);
-            return ApiResponse.success("Login exitoso", resp);
+            return ResponseEntity.ok(resp);
         } catch (Exception e) {
-            return ApiResponse.error("Credenciales inválidas");
+            return ResponseEntity.status(401).body(Map.of("error", "Credenciales inválidas"));
         }
     }
 
-    // REGISTER
     @PostMapping("/register")
-    public ApiResponse<?> register(@Valid @RequestBody RegisterRequestDTO request) {
+    public ResponseEntity<?> register(@RequestBody RegisterRequestDTO request) {
         try {
             String msg = service.register(request.getUsername(), request.getPassword());
-            return ApiResponse.success(msg);
+            return ResponseEntity.ok(Map.of("message", msg));
         } catch (IllegalStateException ex) {
-            return ApiResponse.error(ex.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
         }
     }
 }

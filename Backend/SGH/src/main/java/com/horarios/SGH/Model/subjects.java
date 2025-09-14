@@ -13,8 +13,6 @@ public class subjects {
     @Column(name="subjectName", length = 70, nullable=false, unique=true)
     private String subjectName;
 
-    // Se elimina el OneToMany con teachers (ahora va por TeacherSubject)
-
     public subjects() {}
 
     public subjects(int id, String subjectName) {

@@ -1,8 +1,6 @@
 package com.horarios.SGH.Service;
 
 import com.horarios.SGH.DTO.ScheduleDTO;
-import com.horarios.SGH.Exception.BusinessException;
-import com.horarios.SGH.Exception.ResourceNotFoundException;
 import com.horarios.SGH.Model.TeacherAvailability;
 import com.horarios.SGH.Model.schedule;
 import com.horarios.SGH.Model.courses;
@@ -39,17 +37,14 @@ public class ScheduleService {
         List<schedule> entities = new ArrayList<>();
 
         for (ScheduleDTO dto : asignaciones) {
-            courses course = courseRepo.findById(dto.getCourseId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Curso", dto.getCourseId()));
-            
+            courses course = courseRepo.findById(dto.getCourseId()).orElseThrow();
             if (course.getTeacherSubject() == null) {
-                throw new BusinessException("El curso no tiene docente/materia asignados.");
+                throw new RuntimeException("El curso no tiene docente/materia asignados.");
             }
-            
             teachers teacher = course.getTeacherSubject().getTeacher();
 
             if (!isTeacherAvailable(teacher.getId(), dto.getDay(), dto.getStartTime(), dto.getEndTime())) {
-                throw new BusinessException("El profesor " + teacher.getTeacherName() + " no está disponible el " + dto.getDay());
+                throw new RuntimeException("El profesor " + teacher.getTeacherName() + " no está disponible el " + dto.getDay());
             }
 
             schedule s = toEntity(dto);
@@ -80,8 +75,7 @@ public class ScheduleService {
     private schedule toEntity(ScheduleDTO dto) {
         schedule s = new schedule();
         s.setId(dto.getId());
-        s.setCourseId(courseRepo.findById(dto.getCourseId())
-                .orElseThrow(() -> new ResourceNotFoundException("Curso", dto.getCourseId())));
+        s.setCourseId(courseRepo.findById(dto.getCourseId()).orElseThrow());
         s.setDay(dto.getDay());
         s.setStartTime(dto.getStartTime());
         s.setEndTime(dto.getEndTime());
