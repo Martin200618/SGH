@@ -1,6 +1,7 @@
 package com.horarios.SGH.Controller;
 
 import com.horarios.SGH.DTO.TeacherAvailabilityDTO;
+import com.horarios.SGH.Model.Days;
 import com.horarios.SGH.Model.TeacherAvailability;
 import com.horarios.SGH.Model.teachers;
 import com.horarios.SGH.Repository.ITeacherAvailabilityRepository;
@@ -59,7 +60,7 @@ public class TeacherAvailabilityController {
                 .collect(Collectors.toList());
 
         return all.stream().filter(t -> {
-            List<TeacherAvailability> disponibilidad = availabilityRepo.findByTeacher_IdAndDay(t.getId(), day);
+            List<TeacherAvailability> disponibilidad = availabilityRepo.findByTeacher_IdAndDay(t.getId(), Days.valueOf(day));
             return disponibilidad.stream().anyMatch(d ->
                     !startTime.isBefore(d.getStartTime()) && !endTime.isAfter(d.getEndTime())
             );

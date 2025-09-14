@@ -1,6 +1,7 @@
 package com.horarios.SGH.Service;
 
 import com.horarios.SGH.DTO.ScheduleDTO;
+import com.horarios.SGH.Model.Days;
 import com.horarios.SGH.Model.TeacherAvailability;
 import com.horarios.SGH.Model.schedule;
 import com.horarios.SGH.Model.courses;
@@ -26,7 +27,7 @@ public class ScheduleService {
     private final Icourses courseRepo;
 
     private boolean isTeacherAvailable(Integer teacherId, String day, LocalTime start, LocalTime end) {
-        List<TeacherAvailability> disponibilidad = availabilityRepo.findByTeacher_IdAndDay(teacherId, day);
+        List<TeacherAvailability> disponibilidad = availabilityRepo.findByTeacher_IdAndDay(teacherId, Days.valueOf(day));
         return disponibilidad.stream().anyMatch(d ->
                 !start.isBefore(d.getStartTime()) && !end.isAfter(d.getEndTime())
         );

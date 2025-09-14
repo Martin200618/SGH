@@ -17,7 +17,7 @@ public class TeacherAvailability {
     private teachers teacher;
 
     @Column(nullable = false)
-    private String day;
+    private Days day;
 
     @Column(nullable = false)
     private LocalTime startTime;
@@ -25,7 +25,7 @@ public class TeacherAvailability {
     @Column(nullable = false)
     private LocalTime endTime;
 
-    public TeacherAvailability(Long id, teachers teacher, String day, LocalTime startTime, LocalTime endTime) {
+    public TeacherAvailability(Long id, teachers teacher, Days day, LocalTime startTime, LocalTime endTime) {
         this.id = id;
         this.teacher = teacher;
         this.day = day;
@@ -53,11 +53,11 @@ public class TeacherAvailability {
         this.teacher = teacher;
     }
 
-    public String getDay() {
+    public Days getDay() {
         return day;
     }
 
-    public void setDay(String day) {
+    public void setDay(Days day) {
         this.day = day;
     }
 
