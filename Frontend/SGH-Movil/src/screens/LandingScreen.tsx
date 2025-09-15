@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, Image } from 'react-native';
+import { ScrollView, Image, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { styles } from '../styles/landingStyles';
 import Header from '../components/Genericos/Header';
@@ -13,12 +13,16 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Landing'>;
 export default function LandingScreen() {
   const navigation = useNavigation<NavigationProp>();
 
+  const handleLogin = () => {
+    navigation.navigate('Login');
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Header
         title="Gimnasio Americano ABC"
         buttonLabel="Ingresar"
-        onPress={() => navigation.navigate('Login')}
+        onPress={handleLogin}
       />
 
       <Image source={require('../assets/images/logo.png')} style={styles.logo} />
