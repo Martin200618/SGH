@@ -1,7 +1,10 @@
 package com.horarios.SGH.DTO;
 
+import java.util.List;
+
 import com.horarios.SGH.Model.subjects;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -18,6 +21,10 @@ public class TeacherDTO {
     @Min(value = 1, message = "Debe seleccionar una materia válida")
     private Integer subjectId;
 
+    @Valid
+    private List<TeacherAvailabilityDTO> availability;
+    
+
     public TeacherDTO() {
     }
 
@@ -27,8 +34,16 @@ public class TeacherDTO {
         this.subjectId = subjectId;
     }
 
-    public int getSubjectId() { 
-        return subjectId; 
+    public List<TeacherAvailabilityDTO> getAvailability() {
+        return availability;
+    }
+    
+    public void setAvailability(List<TeacherAvailabilityDTO> availability) {
+        this.availability = availability;
+    }
+
+    public int getSubjectId() {
+        return subjectId;
     }
     
     public void setSubjectId(int subjectId) { 
