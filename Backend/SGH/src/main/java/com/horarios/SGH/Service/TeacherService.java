@@ -29,7 +29,6 @@ public class TeacherService {
         teacher.setTeacherName(dto.getTeacherName());
         teachers savedTeacher = teacherRepo.save(teacher);
 
-        // Si viene subjectId, creamos la relación en TeacherSubject
         if (dto.getSubjectId() > 0) {
             subjects subject = subjectRepo.findById(dto.getSubjectId()).orElseThrow();
             TeacherSubject ts = new TeacherSubject();

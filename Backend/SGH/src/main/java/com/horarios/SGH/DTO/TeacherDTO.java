@@ -1,9 +1,22 @@
 package com.horarios.SGH.DTO;
 
+import com.horarios.SGH.Model.subjects;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 public class TeacherDTO {
     private int teacherId;
+
+    @NotBlank(message = "El nombre del docente no puede estar vacío")
+    @Size(min = 12, max = 40, message = "El nombre del docente debe tener entre 12 y 40 caracteres")
     private String teacherName;
-    private int subjectId;
+    
+    @NotNull(message = "La materia es obligatoria")
+    @Min(value = 1, message = "Debe seleccionar una materia válida")
+    private Integer subjectId;
 
     public TeacherDTO() {
     }

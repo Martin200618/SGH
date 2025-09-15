@@ -1,6 +1,7 @@
 package com.horarios.SGH.Model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 
 @Entity(name="courses")
 public class courses {
@@ -10,7 +11,8 @@ public class courses {
     @Column(name="courseId")
     private int id;
 
-    @Column(name="courseName", length = 15, nullable=false, unique=true)
+    @Column(name="courseName", nullable=false, unique=true)
+    @Size(min = 3, max = 30, message = "El nombre del curso debe tener entre 3 y 30 caracteres")
     private String courseName;
 
     // Docente+Materia que imparte el curso

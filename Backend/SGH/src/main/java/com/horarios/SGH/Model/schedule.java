@@ -22,8 +22,7 @@ public class schedule {
 
     public schedule() {}
 
-    public schedule(Integer id, courses courseId, String day, LocalTime startTime,
-                    LocalTime endTime, String scheduleName) {
+    public schedule(Integer id, courses courseId, String day, LocalTime startTime, LocalTime endTime, String scheduleName) {
         this.id = id;
         this.courseId = courseId;
         this.day = day;

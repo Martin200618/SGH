@@ -2,9 +2,11 @@ package com.horarios.SGH.DTO;
 
 import java.time.LocalTime;
 
+import com.horarios.SGH.Model.Days;
+
 public class TeacherAvailabilityDTO {
     private Integer teacherId;
-    private String day;
+    private Days day;
     private LocalTime startTime;
     private LocalTime endTime;
 
@@ -12,7 +14,7 @@ public class TeacherAvailabilityDTO {
     public TeacherAvailabilityDTO() {
     }
 
-    public TeacherAvailabilityDTO(Integer teacherId, String day, LocalTime startTime, LocalTime endTime) {
+    public TeacherAvailabilityDTO(Integer teacherId, Days day, LocalTime startTime, LocalTime endTime) {
         this.teacherId = teacherId;
         this.day = day;
         this.startTime = startTime;
@@ -27,11 +29,11 @@ public class TeacherAvailabilityDTO {
         this.teacherId = teacherId;
     }
 
-    public String getDay() {
+    public Days getDay() {
         return day;
     }
 
-    public void setDay(String day) {
+    public void setDay(Days day) {
         this.day = day;
     }
 
