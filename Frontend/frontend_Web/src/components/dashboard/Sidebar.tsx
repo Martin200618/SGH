@@ -48,8 +48,14 @@ export default function Sidebar() {
       icon: Calendar,
       label: "Horarios",
       children: [
-        { label: "Horarios cursos", path: "/dashboard/schedule/scheduleCourse" },
-        { label: "Horarios Profesores", path: "/dashboard/schedule/scheduleProfessor" },
+        {
+          label: "Horarios cursos",
+          path: "/dashboard/schedule/scheduleCourse",
+        },
+        {
+          label: "Horarios Profesores",
+          path: "/dashboard/schedule/scheduleProfessor",
+        },
         { label: "General Horario", path: "/dashboard/schedule" },
       ],
     },
@@ -63,8 +69,8 @@ export default function Sidebar() {
       <aside className="w-60 bg-white shadow-lg border-r border-gray-100 flex flex-col">
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <GraduationCap className="text-blue-600" size={24} />
-            EduPanel
+            <img src="/logo.png" alt="Logo" className="w-12 h-auto" />
+            ABC
           </h2>
           <p className="text-sm text-gray-500 mt-1">Panel de Control</p>
         </div>
