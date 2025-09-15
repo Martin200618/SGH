@@ -21,7 +21,7 @@ export default function LoginForm() {
 
   return (
     <View style={styles.formContainer}>
-      {/* Usuario */}
+      {/* Campo Usuario */}
       <View style={styles.inputWrapper}>
         <Image source={require('../../assets/images/user.png')} style={styles.inputIcon} />
         <TextInput
@@ -31,10 +31,11 @@ export default function LoginForm() {
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
+          autoCorrect={false}
         />
       </View>
 
-      {/* Contraseña */}
+      {/* Campo Contraseña */}
       <View style={styles.inputWrapper}>
         <Image source={require('../../assets/images/lock.png')} style={styles.inputIcon} />
         <TextInput
@@ -43,8 +44,10 @@ export default function LoginForm() {
           placeholderTextColor="#999"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
+          secureTextEntry={true}
           autoCapitalize="none"
+          autoCorrect={false}
+          editable={!loading} // No editable cuando está cargando
         />
       </View>
 
@@ -53,6 +56,7 @@ export default function LoginForm() {
         style={[styles.loginButton, loading && styles.loginButtonDisabled]}
         onPress={handleLogin}
         disabled={loading}
+        activeOpacity={0.8}
       >
         <Text style={styles.loginButtonText}>
           {loading ? 'Cargando...' : 'Ingresar'}
