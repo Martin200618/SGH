@@ -52,4 +52,14 @@ public class TeacherAvailabilityDTO {
     public void setEndTime(LocalTime endTime) {
         this.endTime = endTime;
     }
+
+    public int getSubjectId() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getSubjectId'");
+    }
+
+    public Object getAvailability() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAvailability'");
+    }
 }

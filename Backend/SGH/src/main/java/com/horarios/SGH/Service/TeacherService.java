@@ -1,9 +1,12 @@
 package com.horarios.SGH.Service;
 
+import com.horarios.SGH.DTO.TeacherAvailabilityDTO;
 import com.horarios.SGH.DTO.TeacherDTO;
+import com.horarios.SGH.Model.TeacherAvailability;
 import com.horarios.SGH.Model.TeacherSubject;
 import com.horarios.SGH.Model.subjects;
 import com.horarios.SGH.Model.teachers;
+import com.horarios.SGH.Repository.ITeacherAvailabilityRepository;
 import com.horarios.SGH.Repository.Isubjects;
 import com.horarios.SGH.Repository.Iteachers;
 import com.horarios.SGH.Repository.TeacherSubjectRepository;
@@ -20,6 +23,7 @@ public class TeacherService {
     private final Isubjects subjectRepo;
     private final Iteachers teacherRepo;
     private final TeacherSubjectRepository teacherSubjectRepo;
+    private final ITeacherAvailabilityRepository availabilityRepo;
 
     /**
      * Crea un docente. Si se envía subjectId, crea también la relación TeacherSubject.
@@ -138,5 +142,33 @@ public class TeacherService {
                     return dto;
                 })
                 .collect(Collectors.toList());
+    }
+
+    public TeacherDTO createWithAvailability(TeacherDTO dto) {
+        // Crear el docente
+        TeacherDTO createdTeacher = create(dto);
+        
+        // Registrar las disponibilidades
+        if (dto.getAvailability() != null && !dto.getAvailability().isEmpty()) {
+            for (TeacherAvailabilityDTO availabilityDTO : dto.getAvailability()) {
+                availabilityDTO.setTeacherId(createdTeacher.getTeacherId());
+                registerAvailability(availabilityDTO);
+            }
+        }
+        
+        return createdTeacher;
+    }
+
+    // Método auxiliar para registrar disponibilidad
+    private void registerAvailability(TeacherAvailabilityDTO dto) {
+        teachers teacher = teacherRepo.findById(dto.getTeacherId()).orElseThrow();
+        
+        TeacherAvailability availability = new TeacherAvailability();
+        availability.setTeacher(teacher);
+        availability.setDay(dto.getDay());
+        availability.setStartTime(dto.getStartTime());
+        availability.setEndTime(dto.getEndTime());
+        
+        availabilityRepo.save(availability);
     }
 }
