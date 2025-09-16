@@ -2,13 +2,14 @@ import { registerRootComponent } from 'expo';
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import AppNavigation from './src/navigation/AppNavigation';
-import { StatusBar, View, StyleSheet, Platform } from 'react-native';
+import { StatusBar, View, StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { AuthProvider } from './src/context/AuthContext';
 
 function Main() {
   return (
     <SafeAreaProvider>
-      {/* Contenedor que respeta el área segura y pinta el fondo del StatusBar */}
+      {/* Área segura para el StatusBar */}
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <StatusBar
           barStyle="light-content"
@@ -17,11 +18,13 @@ function Main() {
         />
       </SafeAreaView>
 
-      {/* Contenido de la app */}
+      {/* Contenido de la app envuelto en AuthProvider */}
       <View style={styles.container}>
-        <NavigationContainer>
-          <AppNavigation />
-        </NavigationContainer>
+        <AuthProvider>
+          <NavigationContainer>
+            <AppNavigation />
+          </NavigationContainer>
+        </AuthProvider>
       </View>
     </SafeAreaProvider>
   );

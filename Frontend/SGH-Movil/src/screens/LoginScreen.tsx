@@ -15,15 +15,13 @@ export default function LoginScreen() {
         style={styles.backgroundImage}
         resizeMode="cover"
       >
-        {/* Overlay semi-transparente */}
-        <View style={styles.darkOverlay} />
-        
-        <ScrollView contentContainerStyle={styles.container}>
+        {/* Overlay que no bloquea toques */}
+        <View style={styles.darkOverlay} pointerEvents="none" />
+
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <LoginHeader />
 
-          {/* Contenido principal centrado */}
           <View style={styles.mainContent}>
-            {/* Logo circular con fondo blanco */}
             <View style={styles.logoContainer}>
               <View style={styles.logoCircle}>
                 <Image
@@ -34,12 +32,10 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            {/* Título de inicio de sesión */}
             <View style={styles.titleContainer}>
               <Text style={styles.loginTitle}>Inicio de sesión</Text>
             </View>
 
-            {/* Formulario */}
             <LoginForm />
           </View>
         </ScrollView>

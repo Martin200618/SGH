@@ -12,18 +12,18 @@ export const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.15)', // Overlay oscuro semi-transparente
-    zIndex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    zIndex: 0, // antes 1, para que no bloquee toques
   },
   container: {
     flexGrow: 1,
-    zIndex: 2,
+    zIndex: 1, // contenido por encima del overlay
   },
   header: {
     position: 'absolute',
     top: 50,
     left: 20,
-    zIndex: 10,
+    zIndex: 2, // flecha siempre encima
   },
   backIcon: {
     width: 28,
@@ -48,10 +48,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
@@ -77,18 +74,15 @@ export const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.98)', // Más opaco para mejor visibilidad
+    backgroundColor: 'rgba(255, 255, 255, 0.98)',
     borderRadius: 10,
     paddingHorizontal: 15,
     height: 50,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1, // Sombra más sutil
-    },
-    shadowOpacity: 0.08, // Sombra más sutil
-    shadowRadius: 3, // Sombra más sutil
-    elevation: 2, // Reducido para Android
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   inputIcon: {
     width: 20,
@@ -100,19 +94,16 @@ export const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#333',
-    paddingVertical: 0, // Centrar texto verticalmente
+    paddingVertical: 0,
   },
   loginButton: {
-    backgroundColor: '#2E3A59', // Color más oscuro similar a la imagen
+    backgroundColor: '#2E3A59',
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 10,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 5,

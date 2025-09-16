@@ -1,27 +1,34 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, Text, Image, Alert } from 'react-native';
 import { styles } from '../../styles/loginStyles';
+import { useAuth } from '../../context/AuthContext';
 
 export default function LoginForm() {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await login({ username: email, password });
       Alert.alert('¡Bienvenido!', 'Login exitoso');
-    }, 1500);
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View style={styles.formContainer}>
-      {/* Campo Usuario */}
+      {/* Usuario */}
       <View style={styles.inputWrapper}>
         <Image source={require('../../assets/images/user.png')} style={styles.inputIcon} />
         <TextInput
@@ -31,11 +38,11 @@ export default function LoginForm() {
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
-          autoCorrect={false}
+          editable={!loading}
         />
       </View>
 
-      {/* Campo Contraseña */}
+      {/* Contraseña */}
       <View style={styles.inputWrapper}>
         <Image source={require('../../assets/images/lock.png')} style={styles.inputIcon} />
         <TextInput
@@ -44,14 +51,13 @@ export default function LoginForm() {
           placeholderTextColor="#999"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry={true}
+          secureTextEntry
           autoCapitalize="none"
-          autoCorrect={false}
-          editable={!loading} // No editable cuando está cargando
+          editable={!loading}
         />
       </View>
 
-      {/* Botón Ingresar */}
+      {/* Botón */}
       <TouchableOpacity
         style={[styles.loginButton, loading && styles.loginButtonDisabled]}
         onPress={handleLogin}
