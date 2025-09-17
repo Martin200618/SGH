@@ -28,9 +28,14 @@ public class ScheduleService {
 
     private boolean isTeacherAvailable(Integer teacherId, String day, LocalTime start, LocalTime end) {
         List<TeacherAvailability> disponibilidad = availabilityRepo.findByTeacher_IdAndDay(teacherId, Days.valueOf(day));
-        return disponibilidad.stream().anyMatch(d ->
-                !start.isBefore(d.getStartTime()) && !end.isAfter(d.getEndTime())
-        );
+        return disponibilidad.stream().anyMatch(d -> {
+            // Verificar si el horario solicitado está cubierto por AM o PM
+            boolean coveredByAM = d.getAmStart() != null && d.getAmEnd() != null &&
+                    !start.isBefore(d.getAmStart()) && !end.isAfter(d.getAmEnd());
+            boolean coveredByPM = d.getPmStart() != null && d.getPmEnd() != null &&
+                    !start.isBefore(d.getPmStart()) && !end.isAfter(d.getPmEnd());
+            return coveredByAM || coveredByPM;
+        });
     }
 
     @Transactional

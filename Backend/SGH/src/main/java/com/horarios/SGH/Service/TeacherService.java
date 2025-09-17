@@ -162,13 +162,15 @@ public class TeacherService {
     // Método auxiliar para registrar disponibilidad
     private void registerAvailability(TeacherAvailabilityDTO dto) {
         teachers teacher = teacherRepo.findById(dto.getTeacherId()).orElseThrow();
-        
+
         TeacherAvailability availability = new TeacherAvailability();
         availability.setTeacher(teacher);
         availability.setDay(dto.getDay());
-        availability.setStartTime(dto.getStartTime());
-        availability.setEndTime(dto.getEndTime());
-        
+        availability.setAmStart(dto.getAmStart());
+        availability.setAmEnd(dto.getAmEnd());
+        availability.setPmStart(dto.getPmStart());
+        availability.setPmEnd(dto.getPmEnd());
+
         availabilityRepo.save(availability);
     }
 }

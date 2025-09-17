@@ -2,23 +2,35 @@ package com.horarios.SGH.DTO;
 
 import java.time.LocalTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.horarios.SGH.Model.Days;
 
 public class TeacherAvailabilityDTO {
     private Integer teacherId;
     private Days day;
-    private LocalTime startTime;
-    private LocalTime endTime;
 
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime amStart;
+
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime amEnd;
+
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime pmStart;
+
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime pmEnd;
 
     public TeacherAvailabilityDTO() {
     }
 
-    public TeacherAvailabilityDTO(Integer teacherId, Days day, LocalTime startTime, LocalTime endTime) {
+    public TeacherAvailabilityDTO(Integer teacherId, Days day, LocalTime amStart, LocalTime amEnd, LocalTime pmStart, LocalTime pmEnd) {
         this.teacherId = teacherId;
         this.day = day;
-        this.startTime = startTime;
-        this.endTime = endTime;
+        this.amStart = amStart != null ? amStart.withSecond(0) : null;
+        this.amEnd = amEnd != null ? amEnd.withSecond(0): null;
+        this.pmStart = pmStart != null ? pmStart.withSecond(0): null;
+        this.pmEnd = pmEnd != null ? pmEnd.withSecond(0) : null;
     }
 
     public Integer getTeacherId() {
@@ -37,29 +49,35 @@ public class TeacherAvailabilityDTO {
         this.day = day;
     }
 
-    public LocalTime getStartTime() {
-        return startTime;
+    public LocalTime getAmStart() {
+        return amStart;
     }
 
-    public void setStartTime(LocalTime startTime) {
-        this.startTime = startTime;
+    public void setAmStart(LocalTime amStart) {
+        this.amStart = amStart;
     }
 
-    public LocalTime getEndTime() {
-        return endTime;
+    public LocalTime getAmEnd() {
+        return amEnd;
     }
 
-    public void setEndTime(LocalTime endTime) {
-        this.endTime = endTime;
+    public void setAmEnd(LocalTime amEnd) {
+        this.amEnd = amEnd;
     }
 
-    public int getSubjectId() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getSubjectId'");
+    public LocalTime getPmStart() {
+        return pmStart;
     }
 
-    public Object getAvailability() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAvailability'");
+    public void setPmStart(LocalTime pmStart) {
+        this.pmStart = pmStart;
+    }
+
+    public LocalTime getPmEnd() {
+        return pmEnd;
+    }
+
+    public void setPmEnd(LocalTime pmEnd) {
+        this.pmEnd = pmEnd;
     }
 }

@@ -3,9 +3,10 @@ package com.horarios.SGH.Model;
 import jakarta.persistence.*;
 import java.time.LocalTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 @Entity
-@Table(name = "TeacherAvailability",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"teacher_id","day","startTime","endTime"}))
+@Table(name = "TeacherAvailability", uniqueConstraints = @UniqueConstraint(columnNames = { "teacher_id", "day" }))
 public class TeacherAvailability {
 
     @Id
@@ -19,22 +20,34 @@ public class TeacherAvailability {
     @Column(nullable = false)
     private Days day;
 
-    @Column(nullable = false)
-    private LocalTime startTime;
+    @Column
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime amStart;
 
-    @Column(nullable = false)
-    private LocalTime endTime;
+    @Column
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime amEnd;
 
-    public TeacherAvailability(Long id, teachers teacher, Days day, LocalTime startTime, LocalTime endTime) {
+    @Column
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime pmStart;
+
+    @Column
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime pmEnd;
+
+    public TeacherAvailability() {
+    }
+
+    public TeacherAvailability(Long id, teachers teacher, Days day, LocalTime amStart, LocalTime amEnd,
+            LocalTime pmStart, LocalTime pmEnd) {
         this.id = id;
         this.teacher = teacher;
         this.day = day;
-        this.startTime = startTime;
-        this.endTime = endTime;
-    }
-
-    public TeacherAvailability() {
-
+        this.amStart = amStart;
+        this.amEnd = amEnd;
+        this.pmStart = pmStart;
+        this.pmEnd = pmEnd;
     }
 
     public Long getId() {
@@ -61,19 +74,35 @@ public class TeacherAvailability {
         this.day = day;
     }
 
-    public LocalTime getStartTime() {
-        return startTime;
+    public LocalTime getAmStart() {
+        return amStart;
     }
 
-    public void setStartTime(LocalTime startTime) {
-        this.startTime = startTime;
+    public void setAmStart(LocalTime amStart) {
+        this.amStart = amStart;
     }
 
-    public LocalTime getEndTime() {
-        return endTime;
+    public LocalTime getAmEnd() {
+        return amEnd;
     }
 
-    public void setEndTime(LocalTime endTime) {
-        this.endTime = endTime;
+    public void setAmEnd(LocalTime amEnd) {
+        this.amEnd = amEnd;
+    }
+
+    public LocalTime getPmStart() {
+        return pmStart;
+    }
+
+    public void setPmStart(LocalTime pmStart) {
+        this.pmStart = pmStart;
+    }
+
+    public LocalTime getPmEnd() {
+        return pmEnd;
+    }
+
+    public void setPmEnd(LocalTime pmEnd) {
+        this.pmEnd = pmEnd;
     }
 }

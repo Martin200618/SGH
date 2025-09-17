@@ -30,8 +30,10 @@ public class TeacherAvailabilityController {
         TeacherAvailability availability = new TeacherAvailability();
         availability.setTeacher(teacher);
         availability.setDay(dto.getDay());
-        availability.setStartTime(dto.getStartTime());
-        availability.setEndTime(dto.getEndTime());
+        availability.setAmStart(dto.getAmStart());
+        availability.setAmEnd(dto.getAmEnd());
+        availability.setPmStart(dto.getPmStart());
+        availability.setPmEnd(dto.getPmEnd());
 
         availabilityRepo.save(availability);
         return "Disponibilidad registrada correctamente";
@@ -61,9 +63,14 @@ public class TeacherAvailabilityController {
 
         return all.stream().filter(t -> {
             List<TeacherAvailability> disponibilidad = availabilityRepo.findByTeacher_IdAndDay(t.getId(), Days.valueOf(day));
-            return disponibilidad.stream().anyMatch(d ->
-                    !startTime.isBefore(d.getStartTime()) && !endTime.isAfter(d.getEndTime())
-            );
+            return disponibilidad.stream().anyMatch(d -> {
+                // Verificar si el horario solicitado está cubierto por AM o PM
+                boolean coveredByAM = d.getAmStart() != null && d.getAmEnd() != null &&
+                        !startTime.isBefore(d.getAmStart()) && !endTime.isAfter(d.getAmEnd());
+                boolean coveredByPM = d.getPmStart() != null && d.getPmEnd() != null &&
+                        !startTime.isBefore(d.getPmStart()) && !endTime.isAfter(d.getPmEnd());
+                return coveredByAM || coveredByPM;
+            });
         }).collect(Collectors.toList());
     }
 }
