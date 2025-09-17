@@ -31,6 +31,32 @@ public class AuthService {
 
     // Registra 1 usuario adicional (límite total = 2)
     public String register(String username, String rawPassword) {
+        // Validaciones del username
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre de usuario no puede estar vacío");
+        }
+
+        if (username.contains(" ")) {
+            throw new IllegalArgumentException("El nombre de usuario no puede contener espacios");
+        }
+
+        if (!username.equals(username.toLowerCase())) {
+            throw new IllegalArgumentException("El nombre de usuario no puede contener letras mayúsculas");
+        }
+
+        if (username.matches(".*\\d.*")) {
+            throw new IllegalArgumentException("El nombre de usuario no puede contener números");
+        }
+
+        if (username.length() > 100) {
+            throw new IllegalArgumentException("El nombre de usuario no puede exceder los 100 caracteres");
+        }
+
+        // Validación de contraseña
+        if (rawPassword == null || rawPassword.trim().isEmpty()) {
+            throw new IllegalArgumentException("La contraseña no puede estar vacía");
+        }
+
         repo.findByUserName(username).ifPresent(u -> {
             throw new IllegalStateException("El nombre de usuario ya está en uso");
         });
