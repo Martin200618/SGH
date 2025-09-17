@@ -1,26 +1,54 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, Text, Image, Alert } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, Image } from 'react-native';
 import { styles } from '../../styles/loginStyles';
 import { useAuth } from '../../context/AuthContext';
+import CustomAlert from './CustomAlert';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { PasswordInput } from './PasswordInput';
+
+type RootStackParamList = {
+  Login: undefined;
+  Schedules: undefined;
+};
 
 export default function LoginForm() {
   const { login } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
+
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+      setAlertTitle('Campos incompletos');
+      setAlertMessage('Por favor completa todos los campos');
+      setAlertVisible(true);
       return;
     }
 
     setLoading(true);
     try {
       await login({ username: email, password });
-      Alert.alert('¡Bienvenido!', 'Login exitoso');
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
+
+      setAlertTitle('¡Bienvenido!');
+      setAlertMessage('Login exitoso');
+      setAlertVisible(true);
+
+      setTimeout(() => {
+        setAlertVisible(false);
+        navigation.replace('Schedules');
+      }, 1500);
+
+    } catch {
+      setAlertTitle('Error de autenticación');
+      setAlertMessage('Credenciales inválidas');
+      setAlertVisible(true);
     } finally {
       setLoading(false);
     }
@@ -38,26 +66,13 @@ export default function LoginForm() {
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
-          editable={!loading}
         />
       </View>
 
-      {/* Contraseña */}
-      <View style={styles.inputWrapper}>
-        <Image source={require('../../assets/images/lock.png')} style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          placeholderTextColor="#999"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoCapitalize="none"
-          editable={!loading}
-        />
-      </View>
+      {/* Contraseña optimizada */}
+      <PasswordInput value={password} onChange={setPassword} />
 
-      {/* Botón */}
+      {/* Botón login */}
       <TouchableOpacity
         style={[styles.loginButton, loading && styles.loginButtonDisabled]}
         onPress={handleLogin}
@@ -68,6 +83,15 @@ export default function LoginForm() {
           {loading ? 'Cargando...' : 'Ingresar'}
         </Text>
       </TouchableOpacity>
+
+      {/* Modal */}
+      <CustomAlert
+        visible={alertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        onClose={() => setAlertVisible(false)}
+      />
     </View>
   );
 }
+  

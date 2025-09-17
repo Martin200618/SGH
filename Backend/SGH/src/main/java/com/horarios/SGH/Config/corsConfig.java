@@ -18,8 +18,10 @@ public class corsConfig {
         config.addAllowedOrigin("http://127.0.0.1:5500");
         config.addAllowedOrigin("http://localhost:5500");
         config.addAllowedOrigin("http://localhost:3000"); // 👈 agrega Next.js
-        config.addAllowedOrigin("http://10.3.226.178:19000"); // Expo Go
-        config.addAllowedOrigin("http://10.3.226.178:8081");  // Metro bundler
+        config.addAllowedOrigin("http://192.168.1.13:19000"); // Expo Go
+        config.addAllowedOrigin("http://192.168.1.13:8081");  // Metro bundler
+        config.addAllowedOrigin("http://localhost:19000");
+        config.addAllowedOrigin("http://localhost:8081");
 
 
         // Métodos HTTP permitidos
