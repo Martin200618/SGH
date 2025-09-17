@@ -2,7 +2,6 @@ package com.horarios.SGH.DTO;
 
 import java.util.List;
 
-import com.horarios.SGH.Model.subjects;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
