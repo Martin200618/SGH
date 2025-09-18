@@ -1,8 +1,6 @@
 package com.horarios.SGH.Service;
 
-import com.horarios.SGH.DTO.TeacherAvailabilityDTO;
 import com.horarios.SGH.DTO.TeacherDTO;
-import com.horarios.SGH.Model.TeacherAvailability;
 import com.horarios.SGH.Model.TeacherSubject;
 import com.horarios.SGH.Model.subjects;
 import com.horarios.SGH.Model.teachers;
@@ -144,33 +142,11 @@ public class TeacherService {
                 .collect(Collectors.toList());
     }
 
-    public TeacherDTO createWithAvailability(TeacherDTO dto) {
+    public TeacherDTO createWithSpecializations(TeacherDTO dto) {
         // Crear el docente
         TeacherDTO createdTeacher = create(dto);
-        
-        // Registrar las disponibilidades
-        if (dto.getAvailability() != null && !dto.getAvailability().isEmpty()) {
-            for (TeacherAvailabilityDTO availabilityDTO : dto.getAvailability()) {
-                availabilityDTO.setTeacherId(createdTeacher.getTeacherId());
-                registerAvailability(availabilityDTO);
-            }
-        }
-        
+
         return createdTeacher;
     }
 
-    // Método auxiliar para registrar disponibilidad
-    private void registerAvailability(TeacherAvailabilityDTO dto) {
-        teachers teacher = teacherRepo.findById(dto.getTeacherId()).orElseThrow();
-
-        TeacherAvailability availability = new TeacherAvailability();
-        availability.setTeacher(teacher);
-        availability.setDay(dto.getDay());
-        availability.setAmStart(dto.getAmStart());
-        availability.setAmEnd(dto.getAmEnd());
-        availability.setPmStart(dto.getPmStart());
-        availability.setPmEnd(dto.getPmEnd());
-
-        availabilityRepo.save(availability);
-    }
 }

@@ -36,6 +36,11 @@ public class TeacherAvailability {
     @JsonFormat(pattern = "HH:mm")
     private LocalTime pmEnd;
 
+    // Método auxiliar para verificar si hay al menos un horario válido
+    public boolean hasValidSchedule() {
+        return (amStart != null && amEnd != null) || (pmStart != null && pmEnd != null);
+    }
+
     public TeacherAvailability() {
     }
 

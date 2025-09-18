@@ -1,6 +1,7 @@
 package com.horarios.SGH.Model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 @Entity(name="teachers")
@@ -12,7 +13,8 @@ public class teachers {
     private int id;
 
     @Column(name="teacherName", length = 100, nullable=false)
-    @Size(min = 12, max = 40, message = "El nombre del profesor debe tener entre 12 y 40 caracteres")
+    @NotBlank(message = "El nombre del profesor no puede estar vacío")
+    @Size(min = 2, max = 100, message = "El nombre del profesor debe tener entre 2 y 100 caracteres")
     private String teacherName;
 
     public teachers() {}
@@ -37,6 +39,4 @@ public class teachers {
     public void setTeacherName(String teacherName) {
         this.teacherName = teacherName;
     }
-
-    
 }

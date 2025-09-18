@@ -1,6 +1,5 @@
 package com.horarios.SGH.Controller;
 
-import com.horarios.SGH.DTO.TeacherAvailabilityDTO;
 import com.horarios.SGH.DTO.TeacherDTO;
 import com.horarios.SGH.DTO.responseDTO;
 import com.horarios.SGH.Model.subjects;
@@ -134,7 +133,7 @@ public class TeacherController {
                         .body(new responseDTO("ERROR", "La materia con ID " + dto.getSubjectId() + " no existe"));
             }
             
-            service.createWithAvailability(dto);
+            service.createWithSpecializations(dto);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new responseDTO("OK", "Docente y disponibilidades creados correctamente"));
         } catch (Exception e) {
