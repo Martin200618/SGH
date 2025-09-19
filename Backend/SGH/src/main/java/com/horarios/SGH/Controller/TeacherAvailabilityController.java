@@ -28,13 +28,23 @@ public class TeacherAvailabilityController {
     private final TeacherSubjectRepository teacherSubjectRepo;
 
     @PostMapping("/register")
-    public String registerAvailability(@RequestBody TeacherAvailabilityDTO dto) {
+    @Operation(
+        summary = "Registrar disponibilidad de profesor",
+        description = "Registra la disponibilidad horaria de un profesor para un día específico"
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "Disponibilidad registrada correctamente",
+        content = @Content(mediaType = "text/plain")
+    )
+    public String registerAvailability(@RequestBody @Schema(implementation = TeacherAvailabilityDTO.class) TeacherAvailabilityDTO dto) {
         // Validar que el profesor existe
         teachers teacher = teacherRepo.findById(dto.getTeacherId())
                 .orElseThrow(() -> new RuntimeException("Profesor no encontrado con ID: " + dto.getTeacherId()));
 
         // Validar que no exista ya disponibilidad para este profesor y día
-        List<TeacherAvailability> existing = availabilityRepo.findByTeacher_IdAndDay(dto.getTeacherId(), dto.getDay());
+        Days dayEnum = dto.getDay();
+        List<TeacherAvailability> existing = availabilityRepo.findByTeacher_IdAndDay(dto.getTeacherId(), dayEnum);
         if (!existing.isEmpty()) {
             throw new RuntimeException("Ya existe disponibilidad registrada para este profesor en el día " + dto.getDay());
         }
@@ -42,11 +52,12 @@ public class TeacherAvailabilityController {
         // Crear la nueva disponibilidad
         TeacherAvailability availability = new TeacherAvailability();
         availability.setTeacher(teacher);
-        availability.setDay(dto.getDay());
+        availability.setDay(dayEnum);
         availability.setAmStart(dto.getAmStart());
         availability.setAmEnd(dto.getAmEnd());
         availability.setPmStart(dto.getPmStart());
         availability.setPmEnd(dto.getPmEnd());
+        availability.setEndTime(dto.getPmEnd()); // Asumir que end_time es pmEnd
 
         // Validar que al menos tenga un horario válido
         if (!availability.hasValidSchedule()) {
@@ -58,13 +69,23 @@ public class TeacherAvailabilityController {
     }
 
     @PutMapping("/update")
-    public String updateAvailability(@RequestBody TeacherAvailabilityDTO dto) {
+    @Operation(
+        summary = "Actualizar disponibilidad de profesor",
+        description = "Actualiza la disponibilidad horaria de un profesor para un día específico"
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "Disponibilidad actualizada correctamente",
+        content = @Content(mediaType = "text/plain")
+    )
+    public String updateAvailability(@RequestBody @Schema(implementation = TeacherAvailabilityDTO.class) TeacherAvailabilityDTO dto) {
         // Validar que el profesor existe
         teachers teacher = teacherRepo.findById(dto.getTeacherId())
                 .orElseThrow(() -> new RuntimeException("Profesor no encontrado con ID: " + dto.getTeacherId()));
 
         // Buscar disponibilidad existente
-        List<TeacherAvailability> existing = availabilityRepo.findByTeacher_IdAndDay(dto.getTeacherId(), dto.getDay());
+        Days dayEnum = dto.getDay();
+        List<TeacherAvailability> existing = availabilityRepo.findByTeacher_IdAndDay(dto.getTeacherId(), dayEnum);
         if (existing.isEmpty()) {
             throw new RuntimeException("No existe disponibilidad registrada para este profesor en el día " + dto.getDay());
         }
@@ -75,6 +96,7 @@ public class TeacherAvailabilityController {
         availability.setAmEnd(dto.getAmEnd());
         availability.setPmStart(dto.getPmStart());
         availability.setPmEnd(dto.getPmEnd());
+        availability.setEndTime(dto.getPmEnd());
 
         // Validar que al menos tenga un horario válido
         if (!availability.hasValidSchedule()) {

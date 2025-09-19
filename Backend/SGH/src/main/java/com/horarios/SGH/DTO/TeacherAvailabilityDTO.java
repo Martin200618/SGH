@@ -3,22 +3,35 @@ package com.horarios.SGH.DTO;
 import java.time.LocalTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.horarios.SGH.Model.Days;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 
+@Schema(description = "DTO para la disponibilidad de un profesor")
 public class TeacherAvailabilityDTO {
+    @NotNull(message = "El ID del profesor es obligatorio")
+    @Schema(description = "ID del profesor", example = "1")
     private Integer teacherId;
+
+    @NotNull(message = "El día es obligatorio")
+    @Schema(description = "Día de la semana", example = "Lunes")
     private Days day;
 
-    @JsonFormat(pattern = "HH:mm")
+    @JsonFormat(pattern = "HH:mm", shape = Shape.STRING)
+    @Schema(description = "Hora de inicio de la mañana", example = "08:00", type = "string", format = "time")
     private LocalTime amStart;
 
-    @JsonFormat(pattern = "HH:mm")
+    @JsonFormat(pattern = "HH:mm", shape = Shape.STRING)
+    @Schema(description = "Hora de fin de la mañana", example = "12:00", type = "string", format = "time")
     private LocalTime amEnd;
 
-    @JsonFormat(pattern = "HH:mm")
+    @JsonFormat(pattern = "HH:mm", shape = Shape.STRING)
+    @Schema(description = "Hora de inicio de la tarde", example = "14:00", type = "string", format = "time")
     private LocalTime pmStart;
 
-    @JsonFormat(pattern = "HH:mm")
+    @JsonFormat(pattern = "HH:mm", shape = Shape.STRING)
+    @Schema(description = "Hora de fin de la tarde", example = "18:00", type = "string", format = "time")
     private LocalTime pmEnd;
 
     public TeacherAvailabilityDTO() {
