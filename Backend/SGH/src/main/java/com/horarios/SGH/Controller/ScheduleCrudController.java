@@ -38,4 +38,9 @@ public class ScheduleCrudController {
     public List<ScheduleDTO> getByTeacher(@PathVariable Integer id) {
         return scheduleService.obtenerPorProfesor(id);
     }
+
+    @GetMapping
+    public List<ScheduleDTO> getAll() {
+        return scheduleService.obtenerTodos();
+    }
 }

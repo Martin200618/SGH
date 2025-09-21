@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,7 +23,17 @@ public class SubjectController {
 
     // Crear materia
     @PostMapping
-    public ResponseEntity<responseDTO> create(@Valid @RequestBody SubjectDTO dto) {
+    public ResponseEntity<responseDTO> create(@Valid @RequestBody SubjectDTO dto, BindingResult bindingResult) {
+        // Validar errores de validación del DTO
+        if (bindingResult.hasErrors()) {
+            String errorMessage = bindingResult.getFieldErrors().stream()
+                    .map(error -> error.getDefaultMessage())
+                    .findFirst()
+                    .orElse("Error de validación");
+            return ResponseEntity.badRequest()
+                    .body(new responseDTO("ERROR", errorMessage));
+        }
+
         try {
             service.create(dto);
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -57,7 +68,17 @@ public class SubjectController {
 
     // Actualizar materia
     @PutMapping("/{id}")
-    public ResponseEntity<responseDTO> update(@PathVariable int id, @Valid @RequestBody SubjectDTO dto) {
+    public ResponseEntity<responseDTO> update(@PathVariable int id, @Valid @RequestBody SubjectDTO dto, BindingResult bindingResult) {
+        // Validar errores de validación del DTO
+        if (bindingResult.hasErrors()) {
+            String errorMessage = bindingResult.getFieldErrors().stream()
+                    .map(error -> error.getDefaultMessage())
+                    .findFirst()
+                    .orElse("Error de validación");
+            return ResponseEntity.badRequest()
+                    .body(new responseDTO("ERROR", errorMessage));
+        }
+
         try {
             service.update(id, dto);
             return ResponseEntity.ok(new responseDTO("OK", "Materia actualizada correctamente"));

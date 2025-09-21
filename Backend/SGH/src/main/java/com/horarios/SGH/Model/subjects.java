@@ -12,7 +12,7 @@ public class subjects {
     private int id;
 
     @Column(name="subjectName", nullable=false, unique=true)
-    @Size(min = 5, max = 50, message = "El nombre de la asignatura debe tener entre 5 y 50 caracteres")
+    @Size(min = 4, max = 18, message = "El nombre de la asignatura debe tener entre 4 y 18 caracteres")
     private String subjectName;
 
     public subjects() {}

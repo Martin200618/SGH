@@ -13,17 +13,17 @@ export const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.15)',
-    zIndex: 0, // antes 1, para que no bloquee toques
+    zIndex: 0,
   },
   container: {
     flexGrow: 1,
-    zIndex: 1, // contenido por encima del overlay
+    zIndex: 1,
   },
   header: {
     position: 'absolute',
     top: 50,
     left: 20,
-    zIndex: 2, // flecha siempre encima
+    zIndex: 2,
   },
   backIcon: {
     width: 28,
@@ -70,6 +70,8 @@ export const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 300,
     gap: 15,
+    // Evita que el teclado empuje el formulario bruscamente
+    justifyContent: 'center',
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -95,6 +97,7 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
     paddingVertical: 0,
+    textAlignVertical: 'center', // Centra el texto verticalmente y evita saltos
   },
   loginButton: {
     backgroundColor: '#2E3A59',

@@ -55,6 +55,20 @@ public class usersController {
                         .body(new responseDTO("ERROR", "El nombre de usuario no puede estar vacío"));
             }
 
+            if (userName.contains(" ")) {
+                return ResponseEntity.badRequest().body(new responseDTO("ERROR", "El nombre de usuario no puede contener espacios"));
+            }
+
+            // Validación que el nombre de usuario no tenga Mayusculas
+            if (!userName.equals(userName.toLowerCase())) {
+                return ResponseEntity.badRequest().body(new responseDTO("ERROR", "El nombre de usuario no puede contener letras mayúsculas"));
+            }
+
+            // Validación que el nombre de usuario no tenga números
+            if (userName.matches(".*\\d.*")) {
+                return ResponseEntity.badRequest().body(new responseDTO("ERROR", "El nombre de usuario no puede contener números"));
+            }
+            
             // Validación de longitud del nombre de usuario
             if (userName.length() > 100) {
                 return ResponseEntity.badRequest().body(new responseDTO("ERROR", "El nombre de usuario no puede exceder los 100 caracteres"));
@@ -68,7 +82,7 @@ public class usersController {
 
             // Consulta en base de datos
             Optional<users> usuario = usersRepository.findByUserName(userName);
-            if (!usuario.isPresent()) {
+            if (!usuario.isPresent() || !usuario.get().getUserName().equals(userName)) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new responseDTO("ERROR", "Usuario no encontrado"));
             }
@@ -91,7 +105,7 @@ public class usersController {
             }
 
             Optional<users> usuario = usersRepository.findByUserName(username);
-            if (!usuario.isPresent()) {
+            if (!usuario.isPresent() || !usuario.get().getUserName().equals(username)) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new responseDTO("ERROR", "Usuario no encontrado"));
             }

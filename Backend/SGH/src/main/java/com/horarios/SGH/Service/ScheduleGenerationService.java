@@ -1,8 +1,9 @@
 package com.horarios.SGH.Service;
 
 import com.horarios.SGH.DTO.ScheduleHistoryDTO;
-import com.horarios.SGH.Model.schedule_history;
-import com.horarios.SGH.Repository.IScheduleHistory;
+import com.horarios.SGH.Model.*;
+import com.horarios.SGH.Model.schedule;
+import com.horarios.SGH.Repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -11,16 +12,26 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ScheduleGenerationService {
 
     private final IScheduleHistory historyRepository;
+    private final Icourses courseRepo;
+    private final Iteachers teacherRepo;
+    private final ITeacherAvailabilityRepository availabilityRepo;
+    private final IScheduleRepository scheduleRepo;
+    private final Isubjects subjectRepo;
+    private final TeacherSubjectRepository teacherSubjectRepo;
 
     @Transactional
     public ScheduleHistoryDTO generate(ScheduleHistoryDTO request, String executedBy) {
@@ -49,20 +60,19 @@ public class ScheduleGenerationService {
             int totalGenerated = 0;
 
             if (!request.isDryRun()) {
-                // Hook de generación real:
-                // Persistir tus entidades de horario aquí cuando estén listas.
-                for (int i = 0; i < days; i++) {
-                    LocalDate day = request.getPeriodStart().plusDays(i);
-                    // persistSchedule(day, ...);
-                    totalGenerated += 1; // ejemplo: 1 slot por día
-                }
+                // Generación real de horarios
+                totalGenerated = generateSchedulesForPeriod(request.getPeriodStart(), request.getPeriodEnd(), request.getParams());
             } else {
-                totalGenerated = (int) days;
+                // Simulación: contar cursos disponibles
+                List<courses> availableCourses = courseRepo.findAll().stream()
+                    .filter(course -> course.getTeacherSubject() != null)
+                    .collect(Collectors.toList());
+                totalGenerated = availableCourses.size();
             }
 
             history.setStatus("SUCCESS");
             history.setTotalGenerated(totalGenerated);
-            history.setMessage("Generación completada");
+            history.setMessage("Generación completada exitosamente");
             history.setExecutedAt(LocalDateTime.now());
             historyRepository.save(history);
         } catch (Exception ex) {
@@ -113,5 +123,181 @@ public class ScheduleGenerationService {
         dto.setForce(h.isForce());
         dto.setParams(h.getParams());
         return dto;
+    }
+
+    private int generateSchedulesForPeriod(LocalDate startDate, LocalDate endDate, String params) {
+        // Obtener cursos que no tienen horario asignado
+        List<courses> coursesWithoutSchedule = getCoursesWithoutSchedule();
+        List<schedule> generatedSchedules = new ArrayList<>();
+        int totalGenerated = 0;
+
+        // Obtener todos los días únicos del período
+        List<String> daysInPeriod = getUniqueDaysInPeriod(startDate, endDate);
+
+        for (courses course : coursesWithoutSchedule) {
+            if (course.getTeacherSubject() == null) continue; // Saltar cursos sin profesor/materia asignada
+
+            subjects subject = course.getTeacherSubject().getSubject();
+            teachers assignedTeacher = course.getTeacherSubject().getTeacher();
+
+            // Obtener todos los profesores disponibles para esta materia (incluyendo el asignado)
+            List<TeacherSubject> teacherSubjects = teacherSubjectRepo.findBySubject_Id(subject.getId());
+
+            boolean courseAssigned = false;
+
+            // Intentar asignar el curso a un profesor disponible
+            for (String dayName : daysInPeriod) {
+                if (courseAssigned) break;
+
+                // Primero intentar con el profesor asignado al curso
+                if (tryAssignCourseToTeacher(course, assignedTeacher, dayName, generatedSchedules)) {
+                    courseAssigned = true;
+                    totalGenerated++;
+                    break;
+                }
+
+                // Si no se puede asignar al profesor principal, intentar con otros profesores de la materia
+                for (TeacherSubject teacherSubject : teacherSubjects) {
+                    teachers teacher = teacherSubject.getTeacher();
+                    if (teacher.getId() == assignedTeacher.getId()) continue; // Ya intentamos con este
+
+                    if (tryAssignCourseToTeacher(course, teacher, dayName, generatedSchedules)) {
+                        courseAssigned = true;
+                        totalGenerated++;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Persistir todos los horarios generados
+        if (!generatedSchedules.isEmpty()) {
+            scheduleRepo.saveAll(generatedSchedules);
+        }
+
+        return totalGenerated;
+    }
+
+    private List<courses> getCoursesWithoutSchedule() {
+        List<courses> allCourses = courseRepo.findAll();
+        return allCourses.stream()
+            .filter(course -> {
+                List<schedule> schedules = scheduleRepo.findByCourseId(course.getId());
+                return schedules.isEmpty(); // Solo cursos sin horario asignado
+            })
+            .collect(Collectors.toList());
+    }
+
+    private boolean tryAssignCourseToTeacher(courses course, teachers teacher, String dayName, List<schedule> generatedSchedules) {
+        // Verificar disponibilidad del profesor para este día
+        List<TeacherAvailability> availabilities = availabilityRepo.findByTeacher_IdAndDay(teacher.getId(), Days.valueOf(dayName));
+
+        for (TeacherAvailability availability : availabilities) {
+            if (availability.hasValidSchedule()) {
+                // Generar slots disponibles para este profesor en este día
+                List<schedule> availableSlots = generateAvailableTimeSlotsForCourse(course, teacher, availability, dayName);
+
+                // Filtrar slots que no tengan conflictos
+                List<schedule> conflictFreeSlots = filterSlotsWithoutConflicts(availableSlots, teacher.getId(), dayName);
+
+                if (!conflictFreeSlots.isEmpty()) {
+                    // Asignar el primer slot disponible
+                    schedule assignedSlot = conflictFreeSlots.get(0);
+                    generatedSchedules.add(assignedSlot);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private String getDayNameFromDate(LocalDate date) {
+        return switch (date.getDayOfWeek()) {
+            case MONDAY -> "Lunes";
+            case TUESDAY -> "Martes";
+            case WEDNESDAY -> "Miércoles";
+            case THURSDAY -> "Jueves";
+            case FRIDAY -> "Viernes";
+            default -> "Lunes"; // Default para fines de semana
+        };
+    }
+
+    private List<String> getUniqueDaysInPeriod(LocalDate startDate, LocalDate endDate) {
+        List<String> days = new ArrayList<>();
+        LocalDate currentDate = startDate;
+
+        while (!currentDate.isAfter(endDate)) {
+            String dayName = getDayNameFromDate(currentDate);
+            if (!days.contains(dayName)) {
+                days.add(dayName);
+            }
+            currentDate = currentDate.plusDays(1);
+        }
+
+        return days;
+    }
+
+    private List<schedule> generateAvailableTimeSlotsForCourse(courses course, teachers teacher, TeacherAvailability availability, String dayName) {
+        List<schedule> slots = new ArrayList<>();
+        subjects subject = course.getTeacherSubject().getSubject();
+        String scheduleName = course.getCourseName() + " - " + subject.getSubjectName();
+
+        // Generar slots para mañana
+        if (availability.getAmStart() != null && availability.getAmEnd() != null) {
+            slots.addAll(generateSlotsInPeriodForCourse(course, teacher, availability.getAmStart(), availability.getAmEnd(),
+                                                      dayName, scheduleName));
+        }
+
+        // Generar slots para tarde
+        if (availability.getPmStart() != null && availability.getPmEnd() != null) {
+            slots.addAll(generateSlotsInPeriodForCourse(course, teacher, availability.getPmStart(), availability.getPmEnd(),
+                                                      dayName, scheduleName));
+        }
+
+        return slots;
+    }
+
+    private List<schedule> generateSlotsInPeriodForCourse(courses course, teachers teacher, LocalTime start, LocalTime end,
+                                                       String day, String scheduleName) {
+        List<schedule> slots = new ArrayList<>();
+        LocalTime currentTime = start;
+
+        // Asumir clases de 1 hora (puedes ajustar según necesidad)
+        while (currentTime.isBefore(end)) {
+            LocalTime slotEnd = currentTime.plusHours(1);
+            if (slotEnd.isAfter(end)) break;
+
+            schedule slot = new schedule();
+            slot.setCourseId(course);
+            slot.setDay(day);
+            slot.setStartTime(currentTime);
+            slot.setEndTime(slotEnd);
+            slot.setScheduleName(scheduleName);
+
+            slots.add(slot);
+            currentTime = slotEnd;
+        }
+
+        return slots;
+    }
+
+    private List<schedule> filterSlotsWithoutConflicts(List<schedule> slots, Integer teacherId, String dayName) {
+        return slots.stream()
+            .filter(slot -> !hasConflict(slot, teacherId, dayName))
+            .collect(Collectors.toList());
+    }
+
+    private boolean hasConflict(schedule slot, Integer teacherId, String dayName) {
+        // Buscar todos los horarios existentes para este profesor
+        List<schedule> existingSchedules = scheduleRepo.findByTeacherId(teacherId);
+
+        // Filtrar por día y verificar conflictos de horario
+        return existingSchedules.stream()
+            .filter(existing -> dayName.equals(existing.getDay())) // Solo del mismo día
+            .anyMatch(existing ->
+                // Verificar si los horarios se solapan
+                (slot.getStartTime().isBefore(existing.getEndTime()) &&
+                 slot.getEndTime().isAfter(existing.getStartTime()))
+            );
     }
 }

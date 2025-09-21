@@ -4,6 +4,7 @@ import com.horarios.SGH.DTO.LoginRequestDTO;
 import com.horarios.SGH.DTO.LoginResponseDTO;
 import com.horarios.SGH.DTO.RegisterRequestDTO;
 import com.horarios.SGH.Service.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
@@ -19,7 +20,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDTO request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequestDTO request) {
         try {
             LoginResponseDTO resp = service.login(request);
             return ResponseEntity.ok(resp);
@@ -29,7 +30,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequestDTO request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDTO request) {
         try {
             String msg = service.register(request.getUsername(), request.getPassword());
             return ResponseEntity.ok(Map.of("message", msg));

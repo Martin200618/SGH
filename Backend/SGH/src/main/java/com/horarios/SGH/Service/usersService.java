@@ -25,9 +25,38 @@ public class usersService {
 
     // Validar inicio de sesión
     public String login(String userName, String password) {
+        // Validación de campos
+        if (userName == null || userName.trim().isEmpty()) {
+            return "El nombre de usuario no puede estar vacío";
+        }
+
+        if (userName.contains(" ")) {
+            return "El nombre de usuario no puede contener espacios";
+        }
+
+        // Validación que el nombre de usuario no tenga Mayusculas
+        if (!userName.equals(userName.toLowerCase())) {
+            return "El nombre de usuario no puede contener letras mayúsculas";
+        }
+
+        // Validación que el nombre de usuario no tenga números
+        if (userName.matches(".*\\d.*")) {
+            return "El nombre de usuario no puede contener números";
+        }
+
+        // Validación de longitud del nombre de usuario
+        if (userName.length() > 100) {
+            return "El nombre de usuario no puede exceder los 100 caracteres";
+        }
+
+        // Validación de contraseña
+        if (password == null || password.trim().isEmpty()) {
+            return "La contraseña no puede estar vacía";
+        }
+
         Optional<users> user = usersRepository.findByUserName(userName);
 
-        if (!user.isPresent()) {
+        if (!user.isPresent() || !user.get().getUserName().equals(userName)) {
             return "Usuario no encontrado";
         }
 

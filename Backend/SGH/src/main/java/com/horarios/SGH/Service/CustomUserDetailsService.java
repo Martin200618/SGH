@@ -26,6 +26,10 @@ public class CustomUserDetailsService implements UserDetailsService {
         // 1) Intentar cargar desde BD
         users u = userRepository.findByUserName(username).orElse(null);
         if (u != null) {
+            // Verificar que el nombre de usuario coincida exactamente (case-sensitive)
+            if (!u.getUserName().equals(username)) {
+                throw new UsernameNotFoundException("Usuario no encontrado: " + username);
+            }
             return User.withUsername(u.getUserName())
                     .password(u.getPassword()) // BCrypt en BD
                     .authorities(List.of())    // ajusta roles si los manejas
