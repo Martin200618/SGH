@@ -97,4 +97,64 @@ public class ScheduleController {
             .contentType(MediaType.IMAGE_PNG)
             .body(image);
     }
+
+    // PDF con todos los horarios de todos los cursos
+    @GetMapping("/pdf/all")
+    public ResponseEntity<byte[]> exportPdfAllSchedules() throws Exception {
+        byte[] pdf = exportService.exportToPdfAllSchedules();
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=horario_general_completo.pdf")
+            .contentType(MediaType.APPLICATION_PDF)
+            .body(pdf);
+    }
+
+    // PDF con todos los horarios organizados por profesores
+    @GetMapping("/pdf/all-teachers")
+    public ResponseEntity<byte[]> exportPdfAllTeachersSchedules() throws Exception {
+        byte[] pdf = exportService.exportToPdfAllTeachersSchedules();
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=horario_profesores_completo.pdf")
+            .contentType(MediaType.APPLICATION_PDF)
+            .body(pdf);
+    }
+
+    // Excel con todos los horarios de todos los cursos
+    @GetMapping("/excel/all")
+    public ResponseEntity<byte[]> exportExcelAllSchedules() throws Exception {
+        byte[] excel = exportService.exportToExcelAllSchedules();
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=horario_general_completo.xlsx")
+            .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+            .body(excel);
+    }
+
+    // Excel con todos los horarios organizados por profesores
+    @GetMapping("/excel/all-teachers")
+    public ResponseEntity<byte[]> exportExcelAllTeachersSchedules() throws Exception {
+        byte[] excel = exportService.exportToExcelAllTeachersSchedules();
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=horario_profesores_completo.xlsx")
+            .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+            .body(excel);
+    }
+
+    // Imagen con todos los horarios de todos los cursos
+    @GetMapping("/image/all")
+    public ResponseEntity<byte[]> exportImageAllSchedules() throws Exception {
+        byte[] image = exportService.exportToImageAllSchedules();
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=horario_general_completo.png")
+            .contentType(MediaType.IMAGE_PNG)
+            .body(image);
+    }
+
+    // Imagen con todos los horarios organizados por profesores
+    @GetMapping("/image/all-teachers")
+    public ResponseEntity<byte[]> exportImageAllTeachersSchedules() throws Exception {
+        byte[] image = exportService.exportToImageAllTeachersSchedules();
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=horario_profesores_completo.png")
+            .contentType(MediaType.IMAGE_PNG)
+            .body(image);
+    }
 }

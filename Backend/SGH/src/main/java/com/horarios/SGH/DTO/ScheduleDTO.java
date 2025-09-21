@@ -6,6 +6,8 @@ public class ScheduleDTO {
 
     private Integer id;
     private Integer courseId;
+    private Integer teacherId; // opcional - para especificar profesor diferente
+    private Integer subjectId; // opcional - para especificar materia diferente
     private String day;
     private LocalTime startTime;
     private LocalTime endTime;
@@ -16,10 +18,12 @@ public class ScheduleDTO {
 
     public ScheduleDTO() {}
 
-    public ScheduleDTO(Integer id, Integer courseId, String day, LocalTime startTime,
-                       LocalTime endTime, String scheduleName) {
+    public ScheduleDTO(Integer id, Integer courseId, Integer teacherId, Integer subjectId,
+                        String day, LocalTime startTime, LocalTime endTime, String scheduleName) {
         this.id = id;
         this.courseId = courseId;
+        this.teacherId = teacherId;
+        this.subjectId = subjectId;
         this.day = day;
         this.startTime = startTime;
         this.endTime = endTime;
@@ -88,5 +92,21 @@ public class ScheduleDTO {
 
     public void setSubjectName(String subjectName) {
         this.subjectName = subjectName;
+    }
+
+    public Integer getTeacherId() {
+        return teacherId;
+    }
+
+    public void setTeacherId(Integer teacherId) {
+        this.teacherId = teacherId;
+    }
+
+    public Integer getSubjectId() {
+        return subjectId;
+    }
+
+    public void setSubjectId(Integer subjectId) {
+        this.subjectId = subjectId;
     }
 }
