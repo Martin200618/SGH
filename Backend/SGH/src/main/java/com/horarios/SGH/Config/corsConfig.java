@@ -17,7 +17,7 @@ public class corsConfig {
         // Permitir solicitudes desde estos orígenes específicos
         config.addAllowedOrigin("http://127.0.0.1:5500");
         config.addAllowedOrigin("http://localhost:5500");
-        config.addAllowedOrigin("http://localhost:3000"); // 👈 agrega Next.js
+        config.addAllowedOrigin("http://localhost:3000"); // Next.js
         config.addAllowedOrigin("http://10.3.226.178:19000"); // Expo Go
         config.addAllowedOrigin("http://10.3.226.178:8081");  // Metro bundler
 
