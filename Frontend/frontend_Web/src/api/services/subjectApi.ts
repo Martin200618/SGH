@@ -1,24 +1,22 @@
-import { TEACHER_END_POINTS } from "../constants/Enpoint";
+import { SUBJECT_END_POINTS } from "../constants/Enpoint";
 
-export interface Teacher {
-  teacherId: number;
-  teacherName: string;
+export interface Subject {
   subjectId: number;
+  subjectName: string;
+  profesoresAsociados?: number;
 }
 
-export interface CreateTeacherRequest {
-  teacherName: string;
-  subjectId: number;
+export interface CreateSubjectRequest {
+  subjectName: string;
 }
 
-export interface UpdateTeacherRequest {
-  teacherName: string;
-  subjectId: number;
+export interface UpdateSubjectRequest {
+  subjectName: string;
 }
 
-export const getAllTeachers = async (): Promise<Teacher[]> => {
+export const getAllSubjects = async (): Promise<Subject[]> => {
   try {
-    const response = await fetch(TEACHER_END_POINTS, {
+    const response = await fetch(SUBJECT_END_POINTS, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -33,19 +31,19 @@ export const getAllTeachers = async (): Promise<Teacher[]> => {
     const data = await response.json();
     return data;
   } catch (error: any) {
-    console.error("Error al obtener profesores:", error.message);
+    console.error("Error al obtener materias:", error.message);
     throw error;
   }
 };
 
-export const createTeacher = async (teacher: CreateTeacherRequest): Promise<Teacher> => {
+export const createSubject = async (subject: CreateSubjectRequest): Promise<Subject> => {
   try {
-    const response = await fetch(TEACHER_END_POINTS, {
+    const response = await fetch(SUBJECT_END_POINTS, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(teacher),
+      body: JSON.stringify(subject),
     });
 
     if (!response.ok) {
@@ -56,19 +54,19 @@ export const createTeacher = async (teacher: CreateTeacherRequest): Promise<Teac
     const data = await response.json();
     return data;
   } catch (error: any) {
-    console.error("Error al crear profesor:", error.message);
+    console.error("Error al crear materia:", error.message);
     throw error;
   }
 };
 
-export const updateTeacher = async (id: number, teacher: UpdateTeacherRequest): Promise<Teacher> => {
+export const updateSubject = async (id: number, subject: UpdateSubjectRequest): Promise<Subject> => {
   try {
-    const response = await fetch(`${TEACHER_END_POINTS}/${id}`, {
+    const response = await fetch(`${SUBJECT_END_POINTS}/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(teacher),
+      body: JSON.stringify(subject),
     });
 
     if (!response.ok) {
@@ -79,14 +77,14 @@ export const updateTeacher = async (id: number, teacher: UpdateTeacherRequest): 
     const data = await response.json();
     return data;
   } catch (error: any) {
-    console.error("Error al actualizar profesor:", error.message);
+    console.error("Error al actualizar materia:", error.message);
     throw error;
   }
 };
 
-export const deleteTeacher = async (id: number): Promise<void> => {
+export const deleteSubject = async (id: number): Promise<void> => {
   try {
-    const response = await fetch(`${TEACHER_END_POINTS}/${id}`, {
+    const response = await fetch(`${SUBJECT_END_POINTS}/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -98,7 +96,7 @@ export const deleteTeacher = async (id: number): Promise<void> => {
       throw new Error(`Error ${response.status}`);
     }
   } catch (error: any) {
-    console.error("Error al eliminar profesor:", error.message);
+    console.error("Error al eliminar materia:", error.message);
     throw error;
   }
 };

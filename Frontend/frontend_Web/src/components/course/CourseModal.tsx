@@ -1,40 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, BookOpen } from 'lucide-react';
-import { Subject } from '@/api/services/subjectApi';
+import { X, BookOpen, User } from 'lucide-react';
+import { Teacher } from '@/api/services/teacherApi';
 
-interface Professor {
-  id: number;
-  nombre: string;
-  especializacion: string;
-  subjectId: number;
+interface Course {
+  courseId: number;
+  courseName: string;
+  teacherSubjectId?: number;
+  teacherId?: number;
+  subjectId?: number;
+  gradeDirectorId?: number;
 }
 
-interface ProfessorModalProps {
+interface CourseModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (professor: Omit<Professor, 'id'>) => Promise<void>;
-  professor?: Professor | null;
-  subjects: Subject[];
+  onSave: (course: Omit<Course, 'courseId'>) => Promise<void>;
+  course?: Course | null;
+  teachers: Teacher[];
 }
 
-const ProfessorModal: React.FC<ProfessorModalProps> = ({ isOpen, onClose, onSave, professor, subjects }) => {
-  const [nombre, setNombre] = useState('');
-  const [especializacion, setEspecializacion] = useState('');
+const CourseModal: React.FC<CourseModalProps> = ({ isOpen, onClose, onSave, course, teachers }) => {
+  const [courseName, setCourseName] = useState('');
+  const [gradeDirectorId, setGradeDirectorId] = useState<number | undefined>();
 
   useEffect(() => {
-    if (professor) {
-      setNombre(professor.nombre);
-      setEspecializacion(professor.especializacion);
+    if (course) {
+      setCourseName(course.courseName);
+      setGradeDirectorId(course.gradeDirectorId);
     } else {
-      setNombre('');
-      setEspecializacion('');
+      setCourseName('');
+      setGradeDirectorId(undefined);
     }
-  }, [professor, isOpen]);
+  }, [course, isOpen]);
 
   const handleSave = () => {
-    if (nombre.trim() && especializacion.trim()) {
-      const subjectId = subjects.find(s => s.subjectName === especializacion)?.subjectId || 1;
-      onSave({ nombre: nombre.trim(), especializacion: especializacion.trim(), subjectId });
+    if (courseName.trim()) {
+      onSave({
+        courseName: courseName.trim(),
+        gradeDirectorId: gradeDirectorId || undefined,
+      });
       onClose();
     }
   };
@@ -48,14 +52,14 @@ const ProfessorModal: React.FC<ProfessorModalProps> = ({ isOpen, onClose, onSave
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <User className="w-6 h-6 text-blue-600" />
+              <BookOpen className="w-6 h-6 text-blue-600" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                {professor ? 'Editar Profesor' : 'Agregar Profesor'}
+                {course ? 'Editar Curso' : 'Agregar Curso'}
               </h2>
               <p className="text-sm text-gray-600">
-                {professor ? 'Modifica la información del profesor' : 'Ingresa los datos del nuevo profesor'}
+                {course ? 'Modifica la información del curso' : 'Ingresa la información del nuevo curso'}
               </p>
             </div>
           </div>
@@ -69,36 +73,36 @@ const ProfessorModal: React.FC<ProfessorModalProps> = ({ isOpen, onClose, onSave
 
         {/* Form */}
         <div className="p-6 space-y-6">
-          {/* Nombre */}
-          <div className="space-y-2">
-            <label className="flex items-center text-sm font-semibold text-gray-700">
-              <User className="w-4 h-4 mr-2" />
-              Nombre completo
-            </label>
-            <input
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="Ingresa el nombre del profesor"
-            />
-          </div>
-
-          {/* Especialización */}
+          {/* Nombre del curso */}
           <div className="space-y-2">
             <label className="flex items-center text-sm font-semibold text-gray-700">
               <BookOpen className="w-4 h-4 mr-2" />
-              Especialización
+              Nombre del curso
+            </label>
+            <input
+              type="text"
+              value={courseName}
+              onChange={(e) => setCourseName(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              placeholder="Ingresa el nombre del curso"
+            />
+          </div>
+
+          {/* Director de grado */}
+          <div className="space-y-2">
+            <label className="flex items-center text-sm font-semibold text-gray-700">
+              <User className="w-4 h-4 mr-2" />
+              Director de grado
             </label>
             <select
-              value={especializacion}
-              onChange={(e) => setEspecializacion(e.target.value)}
+              value={gradeDirectorId || ''}
+              onChange={(e) => setGradeDirectorId(e.target.value ? parseInt(e.target.value) : undefined)}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             >
-              <option value="">Selecciona una materia</option>
-              {subjects.map((subject) => (
-                <option key={subject.subjectId} value={subject.subjectName}>
-                  {subject.subjectName}
+              <option value="">Selecciona un director (opcional)</option>
+              {teachers.map((teacher) => (
+                <option key={teacher.teacherId} value={teacher.teacherId}>
+                  {teacher.teacherName}
                 </option>
               ))}
             </select>
@@ -117,7 +121,7 @@ const ProfessorModal: React.FC<ProfessorModalProps> = ({ isOpen, onClose, onSave
             onClick={handleSave}
             className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
           >
-            {professor ? 'Actualizar' : 'Crear'} Profesor
+            {course ? 'Actualizar' : 'Crear'} Curso
           </button>
         </div>
       </div>
@@ -125,4 +129,4 @@ const ProfessorModal: React.FC<ProfessorModalProps> = ({ isOpen, onClose, onSave
   );
 };
 
-export default ProfessorModal;
+export default CourseModal;

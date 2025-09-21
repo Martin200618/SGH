@@ -13,8 +13,8 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
-        const data: Teacher[] = await getAllTeachers();
-        const mappedTeachers = data.map((teacher) => ({
+        const teachersData: Teacher[] = await getAllTeachers();
+        const mappedTeachers = teachersData.map((teacher) => ({
           name: teacher.teacherName,
           stats: { materias: 1, cursos: 1, horas: 25 }, // Stats hardcodeados por ahora
         }));
@@ -36,7 +36,7 @@ export default function DashboardPage() {
         {/* Cards Profesores */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 my-6">
           {teachers.map((t, i) => (
-            <TeacherCard key={i} name={t.name} stats={t.stats} />
+            <TeacherCard key={i} name={t.name} />
           ))}
         </div>
 

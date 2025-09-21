@@ -1,45 +1,28 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Edit, Trash2 } from 'lucide-react';
 
-const SubjectsTable = () => {
-  const [subjects, setSubjects] = useState([
-    {
-      id: 1,
-      nombre: 'Matemáticas',
-      profesoresAsociados: 6,
-    },
-    {
-      id: 2,
-      nombre: 'Física',
-      profesoresAsociados: 3,
-    },
-    {
-      id: 3,
-      nombre: 'Química',
-      profesoresAsociados: 3,
-    },
-    {
-      id: 4,
-      nombre: 'Biología',
-      profesoresAsociados: 4,
-    },
-    {
-      id: 5,
-      nombre: 'Inglés',
-      profesoresAsociados: 6,
-    }
-  ]);
+interface Subject {
+  subjectId: number;
+  subjectName: string;
+  profesoresAsociados?: number;
+}
 
+interface SubjectTableProps {
+  subjects: Subject[];
+  onEdit: (id: number) => void;
+  onDelete: (id: number) => void;
+}
+
+const SubjectTable = ({ subjects, onEdit, onDelete }: SubjectTableProps) => {
   const handleEdit = (id: number) => {
-    console.log(`Editar materia con ID: ${id}`);
-    // Aquí puedes agregar la lógica para editar
+    onEdit(id);
   };
 
   const handleDelete = (id: number) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar esta materia?')) {
-      setSubjects(subjects.filter(subject => subject.id !== id));
+      onDelete(id);
     }
   };
 
@@ -63,19 +46,19 @@ const SubjectsTable = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {subjects.map((subject) => (
-                <tr key={subject.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={subject.subjectId} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {subject.nombre}
+                    {subject.subjectName}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-block px-3 py-1 text-sm font-medium text-blue-600 bg-blue-100 rounded-full">
-                      {subject.profesoresAsociados}
+                      {subject.profesoresAsociados || 0}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => handleEdit(subject.id)}
+                        onClick={() => handleEdit(subject.subjectId)}
                         className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
                       >
                         <Edit className="w-3 h-3 mr-1" />
@@ -83,7 +66,7 @@ const SubjectsTable = () => {
                       </button>
                       <span className="text-gray-300">|</span>
                       <button
-                        onClick={() => handleDelete(subject.id)}
+                        onClick={() => handleDelete(subject.subjectId)}
                         className="inline-flex items-center px-3 py-1 text-xs font-medium text-red-600 bg-red-100 rounded hover:bg-red-200 transition-colors"
                       >
                         <Trash2 className="w-3 h-3 mr-1" />
@@ -107,4 +90,4 @@ const SubjectsTable = () => {
   );
 };
 
-export default SubjectsTable;
+export default SubjectTable;

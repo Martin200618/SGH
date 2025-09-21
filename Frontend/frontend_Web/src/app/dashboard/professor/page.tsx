@@ -1,70 +1,77 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ProfessorTable from "@/components/professors/ProfessorTable";
 import HeaderProfessor from "@/components/professors/HeaderProfessor";
 import SearchBar from "@/components/dashboard/SearchBar";
 import ProfessorModal from "@/components/professors/ProfessorModal";
+import { getAllTeachers, createTeacher, updateTeacher, deleteTeacher, Teacher } from "@/api/services/teacherApi";
+import { getAllSubjects, Subject } from "@/api/services/subjectApi";
 
 interface Professor {
   id: number;
   nombre: string;
   especializacion: string;
-  disponibilidad: string[];
+  subjectId: number;
 }
 
 export default function ProfessorPage() {
-  const [teachers, setTeachers] = useState<Professor[]>([
-    {
-      id: 1,
-      nombre: 'Sofia',
-      especializacion: 'Matematicas',
-      disponibilidad: ['Martes', 'Viernes']
-    },
-    {
-      id: 2,
-      nombre: 'Valentina',
-      especializacion: 'Fisica',
-      disponibilidad: ['Lunes', 'Martes']
-    },
-    {
-      id: 3,
-      nombre: 'Carol',
-      especializacion: 'Quimica',
-      disponibilidad: ['Quimica', 'Algebra']
-    },
-    {
-      id: 4,
-      nombre: 'Sara',
-      especializacion: 'Biologia',
-      disponibilidad: ['Biologia', 'Español']
-    },
-    {
-      id: 5,
-      nombre: 'Maria',
-      especializacion: 'Ingles',
-      disponibilidad: ['Ingles', 'Sociales']
-    }
-  ]);
-
+  const [teachers, setTeachers] = useState<Professor[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProfessor, setEditingProfessor] = useState<Professor | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [teachersData, subjectsData] = await Promise.all([
+          getAllTeachers(),
+          getAllSubjects()
+        ]);
+        setSubjects(subjectsData);
+        const mappedTeachers = teachersData.map((teacher) => ({
+          id: teacher.teacherId,
+          nombre: teacher.teacherName,
+          especializacion: subjectsData.find(s => s.subjectId === teacher.subjectId)?.subjectName || "Sin especialización",
+          subjectId: teacher.subjectId,
+        }));
+        setTeachers(mappedTeachers);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleAddProfessor = () => {
     setEditingProfessor(null);
     setIsModalOpen(true);
   };
 
-  const handleSaveProfessor = (professorData: Omit<Professor, 'id'>) => {
-    if (editingProfessor) {
-      // Editar profesor existente
-      setTeachers(teachers.map(t => t.id === editingProfessor.id ? { ...t, ...professorData } : t));
-    } else {
-      // Agregar nuevo profesor
-      const newId = Math.max(...teachers.map(t => t.id)) + 1;
-      setTeachers([...teachers, { id: newId, ...professorData }]);
+  const handleSaveProfessor = async (professorData: Omit<Professor, 'id'>) => {
+    try {
+      const subjectId = subjects.find(s => s.subjectName === professorData.especializacion)?.subjectId || 1;
+      if (editingProfessor) {
+        // Editar profesor existente
+        await updateTeacher(editingProfessor.id, { teacherName: professorData.nombre, subjectId });
+      } else {
+        // Agregar nuevo profesor
+        await createTeacher({ teacherName: professorData.nombre, subjectId });
+      }
+      // Refetch teachers
+      const data: Teacher[] = await getAllTeachers();
+      const mappedTeachers = data.map((teacher) => ({
+        id: teacher.teacherId,
+        nombre: teacher.teacherName,
+        especializacion: subjects.find(s => s.subjectId === teacher.subjectId)?.subjectName || "Sin especialización",
+        subjectId: teacher.subjectId,
+      }));
+      setTeachers(mappedTeachers);
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error saving professor:", error);
     }
-    setIsModalOpen(false);
   };
 
   const handleCloseModal = () => {
@@ -80,8 +87,23 @@ export default function ProfessorPage() {
     }
   };
 
-  const handleDeleteProfessor = (id: number) => {
-    setTeachers(teachers.filter(t => t.id !== id));
+  const handleDeleteProfessor = async (id: number) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este profesor?')) {
+      try {
+        await deleteTeacher(id);
+        // Refetch teachers
+        const data: Teacher[] = await getAllTeachers();
+        const mappedTeachers = data.map((teacher) => ({
+          id: teacher.teacherId,
+          nombre: teacher.teacherName,
+          especializacion: subjects.find(s => s.subjectId === teacher.subjectId)?.subjectName || "Sin especialización",
+          subjectId: teacher.subjectId,
+        }));
+        setTeachers(mappedTeachers);
+      } catch (error) {
+        console.error("Error deleting professor:", error);
+      }
+    }
   };
   return (
     <>
@@ -112,6 +134,7 @@ export default function ProfessorPage() {
         onClose={handleCloseModal}
         onSave={handleSaveProfessor}
         professor={editingProfessor}
+        subjects={subjects}
       />
     </>
   );

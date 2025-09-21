@@ -6,7 +6,6 @@ interface Professor {
   id: number;
   nombre: string;
   especializacion: string;
-  disponibilidad: string[];
 }
 
 interface ProfessorTableProps {
@@ -42,10 +41,7 @@ const ProfessorTable = ({ teachers, onEdit, onDelete }: ProfessorTableProps) => 
                   Especialización
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                  disponibilidad
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                  Actos
+                  Acciones
                 </th>
               </tr>
             </thead>
@@ -59,18 +55,6 @@ const ProfessorTable = ({ teachers, onEdit, onDelete }: ProfessorTableProps) => 
                     <span className="text-sm text-blue-600 font-medium">
                       {teacher.especializacion}
                     </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {teacher.disponibilidad.map((materia, index) => (
-                        <span
-                          key={index}
-                          className="inline-block px-2 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded-full"
-                        >
-                          {materia}
-                        </span>
-                      ))}
-                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">

@@ -51,6 +51,9 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/auth/**",          // login y register publicos
                     "/teachers/**",      // profesores publicos para dashboard
+                    "/subjects/**",      // materias publicas para dashboard
+                    "/courses/**",       // cursos publicos para dashboard
+                    "/schedules-crud/**", // horarios publicos para dashboard
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/v3/api-docs/**",
