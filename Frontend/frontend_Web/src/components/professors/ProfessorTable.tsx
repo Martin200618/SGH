@@ -1,48 +1,29 @@
 import React, { useState } from 'react';
 import { Edit, Trash2 } from 'lucide-react';
+import ProfessorModal from './ProfessorModal';
 
-const ProfessorTable = () => {
-  const [teachers, setTeachers] = useState([
-    {
-      id: 1,
-      nombre: 'Sofia',
-      especializacion: 'Matematicas',
-      materias: ['Matematicas', 'Ciencias Naturales']
-    },
-    {
-      id: 2,
-      nombre: 'Valentina',
-      especializacion: 'Fisica',
-      materias: ['Fisica', 'Quimica']
-    },
-    {
-      id: 3,
-      nombre: 'Carol',
-      especializacion: 'Quimica',
-      materias: ['Quimica', 'Algebra']
-    },
-    {
-      id: 4,
-      nombre: 'Sara',
-      especializacion: 'Biologia',
-      materias: ['Biologia', 'Español']
-    },
-    {
-      id: 5,
-      nombre: 'Maria',
-      especializacion: 'Ingles',
-      materias: ['Ingles', 'Sociales']
-    }
-  ]);
+interface Professor {
+  id: number;
+  nombre: string;
+  especializacion: string;
+  disponibilidad: string[];
+}
+
+interface ProfessorTableProps {
+  teachers: Professor[];
+  onEdit: (id: number) => void;
+  onDelete: (id: number) => void;
+}
+
+const ProfessorTable = ({ teachers, onEdit, onDelete }: ProfessorTableProps) => {
 
   const handleEdit = (id: number) => {
-    console.log(`Editar profesor con ID: ${id}`);
-    // Aquí puedes agregar la lógica para editar
+    onEdit(id);
   };
 
   const handleDelete = (id: number) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este profesor?')) {
-      setTeachers(teachers.filter(teacher => teacher.id !== id));
+      onDelete(id);
     }
   };
 
@@ -61,7 +42,7 @@ const ProfessorTable = () => {
                   Especialización
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                  Materias
+                  disponibilidad
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
                   Actos
@@ -81,7 +62,7 @@ const ProfessorTable = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1">
-                      {teacher.materias.map((materia, index) => (
+                      {teacher.disponibilidad.map((materia, index) => (
                         <span
                           key={index}
                           className="inline-block px-2 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded-full"

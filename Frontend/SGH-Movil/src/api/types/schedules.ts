@@ -1,4 +1,13 @@
-export interface Course {
+export interface ScheduleHistory {
   id: number;
-  name: string;
+  executedBy: string;
+  executedAt: string; // ISO string
+  status: 'RUNNING' | 'SUCCESS' | 'FAILED';
+  totalGenerated: number;
+  message: string;
+  periodStart: string;
+  periodEnd: string;
+  dryRun: boolean;
+  force: boolean;
+  params: string;
 }

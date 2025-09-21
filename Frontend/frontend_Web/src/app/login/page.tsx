@@ -5,11 +5,14 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import LoginForm from "@/components/login/LoginForm";
 import { login } from "@/api/services/userApi";
+import { Link } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState("");
 
+
+      
   interface LoginFormValues {
     user: string;
     password: string;
@@ -58,7 +61,7 @@ export default function LoginPage() {
     >
       <button
         className="absolute top-5 left-5 bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-700"
-        onClick={() => router.back()}
+        onClick={() => router.push("/")}
       >
         Regresar
       </button>
