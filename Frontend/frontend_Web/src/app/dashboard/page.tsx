@@ -1,21 +1,31 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Header from "@/components/dashboard/Header";
 import TeacherCard from "@/components/dashboard/TeacherCard";
 import ChartBar from "@/components/dashboard/ChartBar";
 import ChartDonut from "@/components/dashboard/ChartDonut";
+import { getAllTeachers, Teacher } from "@/api/services/teacherApi";
 
 export default function DashboardPage() {
-  const teachers = [
-    { name: "Marcela Rodriguez", stats: { materias: 1, cursos: 1, horas: 25 } },
-    { name: "Jhan Carlos Rodriguez", stats: { materias: 1, cursos: 1, horas: 25 } },
-    { name: "Lidia Stefany Toledo", stats: { materias: 1, cursos: 1, horas: 25 } },
-    { name: "Juan Camilo Rodriguez", stats: { materias: 1, cursos: 1, horas: 25 } },
-    { name: "Nuri Yineth Polo Ruiz", stats: { materias: 1, cursos: 1, horas: 25 } },
-    { name: "Juan Camilo Perdomo", stats: { materias: 1, cursos: 1, horas: 25 } },
-    { name: "Maria Luz Angela Perez", stats: { materias: 1, cursos: 1, horas: 25 } },
-    { name: "Anny Ramos Guzman", stats: { materias: 1, cursos: 1, horas: 25 } },
-  ];
+  const [teachers, setTeachers] = useState<{ name: string; stats: { materias: number; cursos: number; horas: number } }[]>([]);
+
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      try {
+        const data: Teacher[] = await getAllTeachers();
+        const mappedTeachers = data.map((teacher) => ({
+          name: teacher.teacherName,
+          stats: { materias: 1, cursos: 1, horas: 25 }, // Stats hardcodeados por ahora
+        }));
+        setTeachers(mappedTeachers);
+      } catch (error) {
+        console.error("Error fetching teachers:", error);
+      }
+    };
+
+    fetchTeachers();
+  }, []);
 
   return (
     <>

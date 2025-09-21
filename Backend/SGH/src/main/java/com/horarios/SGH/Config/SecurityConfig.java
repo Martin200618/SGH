@@ -50,6 +50,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/auth/**",          // login y register publicos
+                    "/teachers/**",      // profesores publicos para dashboard
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/v3/api-docs/**",
