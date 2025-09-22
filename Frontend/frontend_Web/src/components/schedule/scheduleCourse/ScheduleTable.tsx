@@ -22,10 +22,10 @@ interface ScheduleTableProps {
   schedulesByCourse: Record<number, Schedule[]>;
   courses: Course[];
   onEdit: (courseId: number) => void;
-  onDelete: (courseId: number) => void;
+  onGenerate: () => void;
 }
 
-const ScheduleTable = ({ schedulesByCourse, courses, onEdit, onDelete }: ScheduleTableProps) => {
+const ScheduleTable = ({ schedulesByCourse, courses, onEdit, onGenerate }: ScheduleTableProps) => {
   const times = [
     "8:00 AM - 9:00 AM",
     "9:00 AM - 10:00 AM",
@@ -123,20 +123,6 @@ const ScheduleTable = ({ schedulesByCourse, courses, onEdit, onDelete }: Schedul
           </div>
         </div>
 
-        <div className="flex justify-end mt-4 space-x-2">
-          <button
-            onClick={() => onEdit(courseId)}
-            className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
-          >
-            Editar
-          </button>
-          <button
-            onClick={() => onDelete(courseId)}
-            className="inline-flex items-center px-3 py-1 text-xs font-medium text-red-600 bg-red-100 rounded hover:bg-red-200 transition-colors"
-          >
-            Eliminar Horario
-          </button>
-        </div>
       </div>
     );
   };
@@ -148,7 +134,10 @@ const ScheduleTable = ({ schedulesByCourse, courses, onEdit, onDelete }: Schedul
 
         {/* Botón Generar nuevo horario */}
         <div className="mb-6">
-          <button className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 border border-gray-300">
+          <button
+            onClick={onGenerate}
+            className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200 border border-gray-300"
+          >
             <div className="w-5 h-5 border-2 border-gray-600 rounded-full flex items-center justify-center">
               <span className="text-gray-600 font-bold text-lg leading-none">+</span>
             </div>

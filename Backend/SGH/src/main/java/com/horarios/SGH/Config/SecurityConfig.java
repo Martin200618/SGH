@@ -53,7 +53,9 @@ public class SecurityConfig {
                     "/teachers/**",      // profesores publicos para dashboard
                     "/subjects/**",      // materias publicas para dashboard
                     "/courses/**",       // cursos publicos para dashboard
-                    "/schedules-crud/**", // horarios publicos para dashboard
+                    "/schedules/**",     // horarios publicos para dashboard
+                    "/schedules-crud/**", // horarios crud publicos para dashboard
+                    "/schedules/history", // historial de horarios
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/v3/api-docs/**",

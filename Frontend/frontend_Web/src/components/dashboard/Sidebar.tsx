@@ -26,6 +26,8 @@ export default function Sidebar() {
 
   const handleLogout = () => {
     setIsLoggingOut(true);
+    // Remove the authentication token
+    localStorage.removeItem("token");
     setTimeout(() => {
       setIsLoggingOut(false);
       setShowModal(false);

@@ -1,4 +1,4 @@
-import { SCHEDULE_CRUD_END_POINTS } from "../constants/Enpoint";
+import { SCHEDULE_CRUD_END_POINTS, API_BASE_URL } from "../constants/Enpoint";
 
 export interface Schedule {
   id: number;
@@ -53,6 +53,75 @@ export const getSchedulesByCourse = async (courseId: number): Promise<Schedule[]
     return data;
   } catch (error: any) {
     console.error("Error al obtener horarios por curso:", error.message);
+    throw error;
+  }
+};
+
+export interface ScheduleHistory {
+  id: number;
+  executedBy: string;
+  executedAt: string;
+  status: string;
+  totalGenerated: number;
+  message: string;
+  periodStart: string;
+  periodEnd: string;
+  dryRun: boolean;
+  force: boolean;
+  params?: string;
+}
+
+export const generateSchedule = async (request: {
+  periodStart: string;
+  periodEnd: string;
+  dryRun: boolean;
+  force: boolean;
+  params?: string;
+}): Promise<ScheduleHistory> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/schedules/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || `Error ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error al generar horario:", error.message);
+    throw error;
+  }
+};
+
+export const getScheduleHistory = async (page: number = 0, size: number = 10): Promise<{
+  content: ScheduleHistory[];
+  totalElements: number;
+  totalPages: number;
+}> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/schedules/history?page=${page}&size=${size}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || `Error ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error: any) {
+    console.error("Error al obtener historial:", error.message);
     throw error;
   }
 };

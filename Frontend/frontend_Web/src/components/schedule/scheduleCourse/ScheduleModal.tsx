@@ -1,15 +1,14 @@
 import React from 'react';
-import { X, RefreshCw, Trash2 } from 'lucide-react';
+import { X, RefreshCw } from 'lucide-react';
 
 interface ScheduleModalProps {
   isOpen: boolean;
   onClose: () => void;
   onRegenerate: () => void;
-  onDelete: () => void;
   courseName: string;
 }
 
-const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, onRegenerate, onDelete, courseName }) => {
+const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, onRegenerate, courseName }) => {
   if (!isOpen) return null;
 
   return (
@@ -41,7 +40,7 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, onRegene
         {/* Body */}
         <div className="p-6 space-y-4">
           <p className="text-gray-700">
-            ¿Qué acción deseas realizar con el horario de este curso?
+            ¿Deseas regenerar el horario para este curso?
           </p>
 
           <div className="space-y-3">
@@ -53,17 +52,6 @@ const ScheduleModal: React.FC<ScheduleModalProps> = ({ isOpen, onClose, onRegene
               <div className="text-left">
                 <div className="font-medium text-blue-900">Regenerar Horario</div>
                 <div className="text-sm text-blue-700">Crear un nuevo horario automáticamente</div>
-              </div>
-            </button>
-
-            <button
-              onClick={onDelete}
-              className="w-full flex items-center space-x-3 p-4 bg-red-50 hover:bg-red-100 rounded-xl transition-colors"
-            >
-              <Trash2 className="w-5 h-5 text-red-600" />
-              <div className="text-left">
-                <div className="font-medium text-red-900">Eliminar Horario</div>
-                <div className="text-sm text-red-700">Remover el horario actual del curso</div>
               </div>
             </button>
           </div>
