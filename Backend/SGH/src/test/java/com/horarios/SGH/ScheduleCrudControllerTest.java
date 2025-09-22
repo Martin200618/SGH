@@ -12,7 +12,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
@@ -38,8 +37,8 @@ public class ScheduleCrudControllerTest extends BaseControllerTest {
         ScheduleDTO input = new ScheduleDTO();
         input.setCourseId(1);
         input.setDay("Lunes");
-        input.setStartTime(LocalTime.of(8, 0));
-        input.setEndTime(LocalTime.of(10, 0));
+        input.setStartTime("08:00");
+        input.setEndTime("10:00");
         input.setScheduleName("Horario 1");
 
         List<ScheduleDTO> inputList = Arrays.asList(input);

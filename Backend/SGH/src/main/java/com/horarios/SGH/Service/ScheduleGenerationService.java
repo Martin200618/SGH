@@ -60,14 +60,12 @@ public class ScheduleGenerationService {
             int totalGenerated = 0;
 
             if (!request.isDryRun()) {
-                // Generación real de horarios
+                // Generación real de horarios por cursos
                 totalGenerated = generateSchedulesForPeriod(request.getPeriodStart(), request.getPeriodEnd(), request.getParams());
             } else {
-                // Simulación: contar cursos disponibles
-                List<courses> availableCourses = courseRepo.findAll().stream()
-                    .filter(course -> course.getTeacherSubject() != null)
-                    .collect(Collectors.toList());
-                totalGenerated = availableCourses.size();
+                // Simulación: contar cursos sin horario asignado
+                List<courses> coursesWithoutSchedule = getCoursesWithoutSchedule();
+                totalGenerated = coursesWithoutSchedule.size();
             }
 
             history.setStatus("SUCCESS");
@@ -125,6 +123,14 @@ public class ScheduleGenerationService {
         return dto;
     }
 
+    /**
+     * Genera horarios automáticamente para cursos sin asignación.
+     * REGLAS ESTRICTAS:
+     * - Solo asigna cursos que no tienen horario
+     * - Usa ÚNICAMENTE el profesor asignado al curso
+     * - Cada profesor debe estar asociado a UNA sola materia
+     * - No busca profesores alternativos
+     */
     private int generateSchedulesForPeriod(LocalDate startDate, LocalDate endDate, String params) {
         // Obtener cursos que no tienen horario asignado
         List<courses> coursesWithoutSchedule = getCoursesWithoutSchedule();
@@ -137,37 +143,31 @@ public class ScheduleGenerationService {
         for (courses course : coursesWithoutSchedule) {
             if (course.getTeacherSubject() == null) continue; // Saltar cursos sin profesor/materia asignada
 
-            subjects subject = course.getTeacherSubject().getSubject();
             teachers assignedTeacher = course.getTeacherSubject().getTeacher();
+            subjects subject = course.getTeacherSubject().getSubject();
 
-            // Obtener todos los profesores disponibles para esta materia (incluyendo el asignado)
-            List<TeacherSubject> teacherSubjects = teacherSubjectRepo.findBySubject_Id(subject.getId());
+            // VALIDACIÓN CRÍTICA: Un profesor solo puede estar asociado a UNA materia
+            List<TeacherSubject> teacherAssociations = teacherSubjectRepo.findByTeacher_Id(assignedTeacher.getId());
+            if (teacherAssociations.size() > 1) {
+                throw new RuntimeException("ERROR DE CONFIGURACIÓN: El profesor " + assignedTeacher.getTeacherName() +
+                    " está asociado a múltiples materias (" + teacherAssociations.size() + "). " +
+                    "Cada profesor debe estar asociado únicamente a UNA materia.");
+            }
 
             boolean courseAssigned = false;
 
-            // Intentar asignar el curso a un profesor disponible
+            // Intentar asignar el curso ÚNICAMENTE al profesor asignado (no buscar alternativas)
             for (String dayName : daysInPeriod) {
                 if (courseAssigned) break;
 
-                // Primero intentar con el profesor asignado al curso
                 if (tryAssignCourseToTeacher(course, assignedTeacher, dayName, generatedSchedules)) {
                     courseAssigned = true;
                     totalGenerated++;
                     break;
                 }
-
-                // Si no se puede asignar al profesor principal, intentar con otros profesores de la materia
-                for (TeacherSubject teacherSubject : teacherSubjects) {
-                    teachers teacher = teacherSubject.getTeacher();
-                    if (teacher.getId() == assignedTeacher.getId()) continue; // Ya intentamos con este
-
-                    if (tryAssignCourseToTeacher(course, teacher, dayName, generatedSchedules)) {
-                        courseAssigned = true;
-                        totalGenerated++;
-                        break;
-                    }
-                }
             }
+
+            // Si no se pudo asignar el curso, continuar con el siguiente (no es error crítico)
         }
 
         // Persistir todos los horarios generados

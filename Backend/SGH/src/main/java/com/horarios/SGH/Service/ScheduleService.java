@@ -7,6 +7,7 @@ import com.horarios.SGH.Model.schedule;
 import com.horarios.SGH.Model.courses;
 import com.horarios.SGH.Model.subjects;
 import com.horarios.SGH.Model.teachers;
+import com.horarios.SGH.Model.TeacherSubject;
 import com.horarios.SGH.Repository.IScheduleRepository;
 import com.horarios.SGH.Repository.ITeacherAvailabilityRepository;
 import com.horarios.SGH.Repository.Icourses;
@@ -55,26 +56,39 @@ public class ScheduleService {
             teachers teacher;
             subjects subject;
 
+            // VALIDACIÓN: Si se especifica teacherId, subjectId es obligatorio y viceversa
+            if (dto.getTeacherId() != null && dto.getSubjectId() == null) {
+                throw new RuntimeException("Si especificas teacherId, también debes especificar subjectId.");
+            }
+            if (dto.getSubjectId() != null && dto.getTeacherId() == null) {
+                throw new RuntimeException("Si especificas subjectId, también debes especificar teacherId.");
+            }
+
             // Si se especifica teacherId y subjectId, usar esos valores
             if (dto.getTeacherId() != null && dto.getSubjectId() != null) {
                 teacher = teacherRepo.findById(dto.getTeacherId()).orElseThrow();
                 subject = subjectRepo.findById(dto.getSubjectId()).orElseThrow();
 
-                // Validar que el profesor pueda enseñar esta materia
-                boolean canTeachSubject = teacherSubjectRepo.existsByTeacher_IdAndSubject_Id(teacher.getId(), subject.getId());
-                if (!canTeachSubject) {
-                    throw new RuntimeException("El profesor " + teacher.getTeacherName() + " no puede enseñar " + subject.getSubjectName());
+                // VALIDACIÓN: Un profesor solo puede estar asociado a UNA materia
+                List<TeacherSubject> teacherAssociations = teacherSubjectRepo.findByTeacher_Id(teacher.getId());
+                if (teacherAssociations.size() > 1) {
+                    throw new RuntimeException("El profesor " + teacher.getTeacherName() +
+                        " está asociado a múltiples materias. Cada profesor debe estar asociado únicamente a una materia.");
+                }
+
+                // Validar que el profesor esté vinculado específicamente a esta materia
+                boolean isLinkedToSubject = teacherSubjectRepo.existsByTeacher_IdAndSubject_Id(teacher.getId(), subject.getId());
+                if (!isLinkedToSubject) {
+                    throw new RuntimeException("El profesor " + teacher.getTeacherName() +
+                        " no está vinculado a la materia " + subject.getSubjectName() +
+                        ". Debe existir una relación TeacherSubject entre ellos.");
                 }
             } else {
-                // Usar el comportamiento original (TeacherSubject del curso)
-                if (course.getTeacherSubject() == null) {
-                    throw new RuntimeException("El curso no tiene docente/materia asignados y no se especificaron teacherId/subjectId.");
-                }
-                teacher = course.getTeacherSubject().getTeacher();
-                subject = course.getTeacherSubject().getSubject();
+                // Si no se especifica profesor/materia, es un error
+                throw new RuntimeException("Debes especificar tanto teacherId como subjectId para crear el horario.");
             }
 
-            if (!isTeacherAvailable(teacher.getId(), dto.getDay(), dto.getStartTime(), dto.getEndTime())) {
+            if (!isTeacherAvailable(teacher.getId(), dto.getDay(), dto.getStartTimeAsLocalTime(), dto.getEndTimeAsLocalTime())) {
                 throw new RuntimeException("El profesor " + teacher.getTeacherName() + " no está disponible el " + dto.getDay());
             }
 
@@ -112,8 +126,8 @@ public class ScheduleService {
         s.setId(dto.getId());
         s.setCourseId(courseRepo.findById(dto.getCourseId()).orElseThrow());
         s.setDay(dto.getDay());
-        s.setStartTime(dto.getStartTime());
-        s.setEndTime(dto.getEndTime());
+        s.setStartTime(dto.getStartTimeAsLocalTime());
+        s.setEndTime(dto.getEndTimeAsLocalTime());
         s.setScheduleName(dto.getScheduleName());
         return s;
     }
@@ -123,11 +137,11 @@ public class ScheduleService {
         dto.setId(s.getId());
         dto.setCourseId(s.getCourseId().getId());
         dto.setDay(s.getDay());
-        dto.setStartTime(s.getStartTime());
-        dto.setEndTime(s.getEndTime());
+        dto.setStartTimeFromLocalTime(s.getStartTime());
+        dto.setEndTimeFromLocalTime(s.getEndTime());
         dto.setScheduleName(s.getScheduleName());
 
-        // Por defecto, usar la información del TeacherSubject del curso
+        // Usar la información del TeacherSubject del curso (que es la fuente de verdad)
         if (s.getCourseId().getTeacherSubject() != null) {
             dto.setTeacherId(s.getCourseId().getTeacherSubject().getTeacher().getId());
             dto.setSubjectId(s.getCourseId().getTeacherSubject().getSubject().getId());
