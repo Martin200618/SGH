@@ -1,5 +1,6 @@
 package com.horarios.SGH.jwt;
 
+import com.horarios.SGH.Service.TokenRevocationService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,11 +18,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final UserDetailsService userDetailsService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final TokenRevocationService tokenRevocationService;
 
     public JwtAuthenticationFilter(UserDetailsService userDetailsService,
-                                   JwtTokenProvider jwtTokenProvider) {
+                                    JwtTokenProvider jwtTokenProvider,
+                                    TokenRevocationService tokenRevocationService) {
         this.userDetailsService = userDetailsService;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.tokenRevocationService = tokenRevocationService;
     }
 
     @Override
@@ -32,6 +36,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = jwtTokenProvider.resolveToken(request);
 
         if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            // Verificar si el token está revocado ANTES de cualquier validación
+            if (tokenRevocationService.isTokenRevoked(token)) {
+                // Token revocado, no autenticar
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             String username = jwtTokenProvider.getUsernameFromToken(token);
 
             if (username != null) {

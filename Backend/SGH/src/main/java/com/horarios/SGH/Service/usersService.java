@@ -9,12 +9,11 @@ import com.horarios.SGH.Model.users;
 import com.horarios.SGH.Repository.Iusers;
 
 @Service
-public class usersService {
+public class usersService implements IUsersService {
 
     @Autowired
     private Iusers usersRepository;
 
-    // Obtener usuario por ID
     public Optional<users> findById(int userId) {
         try {
             return usersRepository.findById(userId);
@@ -23,9 +22,7 @@ public class usersService {
         }
     }
 
-    // Validar inicio de sesión
     public String login(String userName, String password) {
-        // Validación de campos
         if (userName == null || userName.trim().isEmpty()) {
             return "El nombre de usuario no puede estar vacío";
         }
@@ -34,22 +31,20 @@ public class usersService {
             return "El nombre de usuario no puede contener espacios";
         }
 
-        // Validación que el nombre de usuario no tenga Mayusculas
+        // Validate that username doesn't contain uppercase letters
         if (!userName.equals(userName.toLowerCase())) {
             return "El nombre de usuario no puede contener letras mayúsculas";
         }
-
-        // Validación que el nombre de usuario no tenga números
+    
+        // Validate that username doesn't contain numbers
         if (userName.matches(".*\\d.*")) {
             return "El nombre de usuario no puede contener números";
         }
 
-        // Validación de longitud del nombre de usuario
         if (userName.length() > 100) {
             return "El nombre de usuario no puede exceder los 100 caracteres";
         }
 
-        // Validación de contraseña
         if (password == null || password.trim().isEmpty()) {
             return "La contraseña no puede estar vacía";
         }

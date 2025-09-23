@@ -2,6 +2,7 @@ package com.horarios.SGH.Service;
 
 import com.horarios.SGH.Model.users;
 import com.horarios.SGH.Repository.Iusers;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,12 @@ import java.util.List;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
+
+    @Value("${app.master.username}")
+    private String masterUsername;
+
+    @Value("${app.master.password}")
+    private String masterPassword;
 
     private final Iusers userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -37,9 +44,9 @@ public class CustomUserDetailsService implements UserDetailsService {
         }
 
         // 2) Fallback local para "master" SOLO si no existe en BD
-        if ("master".equals(username)) {
-            return User.withUsername("master")
-                    .password(passwordEncoder.encode("Master$2025!"))
+        if (masterUsername.equals(username)) {
+            return User.withUsername(masterUsername)
+                    .password(passwordEncoder.encode(masterPassword))
                     .roles("ADMIN")
                     .build();
         }

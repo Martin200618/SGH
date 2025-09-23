@@ -19,7 +19,7 @@ import com.itextpdf.text.Font;
 
 @Service
 @RequiredArgsConstructor
-public class ScheduleExportService {
+public class ScheduleExportService implements IScheduleExportService {
 
     private final IScheduleRepository scheduleRepository;
 

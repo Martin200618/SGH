@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class ScheduleGenerationService {
+public class ScheduleGenerationService implements IScheduleGenerationService {
 
     private final IScheduleHistory historyRepository;
     private final Icourses courseRepo;
@@ -44,7 +44,6 @@ public class ScheduleGenerationService {
         history.setMessage("Iniciando generación");
         history.setTotalGenerated(0);
 
-        // Parámetros de ejecución
         history.setPeriodStart(request.getPeriodStart());
         history.setPeriodEnd(request.getPeriodEnd());
         history.setDryRun(request.isDryRun());
@@ -60,14 +59,12 @@ public class ScheduleGenerationService {
             int totalGenerated = 0;
 
             if (!request.isDryRun()) {
-                // Generación real de horarios
+                // Real schedule generation for courses
                 totalGenerated = generateSchedulesForPeriod(request.getPeriodStart(), request.getPeriodEnd(), request.getParams());
             } else {
-                // Simulación: contar cursos disponibles
-                List<courses> availableCourses = courseRepo.findAll().stream()
-                    .filter(course -> course.getTeacherSubject() != null)
-                    .collect(Collectors.toList());
-                totalGenerated = availableCourses.size();
+                // Simulation: count courses without assigned schedule
+                List<courses> coursesWithoutSchedule = getCoursesWithoutSchedule();
+                totalGenerated = coursesWithoutSchedule.size();
             }
 
             history.setStatus("SUCCESS");
@@ -85,16 +82,6 @@ public class ScheduleGenerationService {
         return toDTO(history);
     }
 
-    @Transactional(readOnly = true)
-    public Page<ScheduleHistoryDTO> history(int page, int size) {
-        var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "executedAt"));
-        var histories = historyRepository.findAllByOrderByExecutedAtDesc(pageable);
-        List<ScheduleHistoryDTO> content = histories.map(this::toDTO).getContent();
-        return new PageImpl<>(content, pageable, histories.getTotalElements());
-    }
-
-    // -------------------- Privados --------------------
-
     private void validate(ScheduleHistoryDTO r) {
         if (r.getPeriodStart() == null || r.getPeriodEnd() == null) {
             throw new IllegalArgumentException("periodStart y periodEnd son obligatorios");
@@ -109,68 +96,52 @@ public class ScheduleGenerationService {
         // Si !r.isForce(): agregar validación de solapamientos según tu regla si aplica.
     }
 
-    private ScheduleHistoryDTO toDTO(schedule_history h) {
-        ScheduleHistoryDTO dto = new ScheduleHistoryDTO();
-        dto.setId(h.getId());
-        dto.setExecutedBy(h.getExecutedBy());
-        dto.setExecutedAt(h.getExecutedAt());
-        dto.setStatus(h.getStatus());
-        dto.setTotalGenerated(h.getTotalGenerated());
-        dto.setMessage(h.getMessage());
-        dto.setPeriodStart(h.getPeriodStart());
-        dto.setPeriodEnd(h.getPeriodEnd());
-        dto.setDryRun(h.isDryRun());
-        dto.setForce(h.isForce());
-        dto.setParams(h.getParams());
-        return dto;
-    }
 
+    /**
+     * Genera horarios automáticamente para cursos sin asignación.
+     * REGLAS ESTRICTAS:
+     * - Solo asigna cursos que no tienen horario
+     * - Usa ÚNICAMENTE el profesor asignado al curso
+     * - Cada profesor debe estar asociado a UNA sola materia
+     * - No busca profesores alternativos
+     */
     private int generateSchedulesForPeriod(LocalDate startDate, LocalDate endDate, String params) {
-        // Obtener cursos que no tienen horario asignado
         List<courses> coursesWithoutSchedule = getCoursesWithoutSchedule();
         List<schedule> generatedSchedules = new ArrayList<>();
         int totalGenerated = 0;
 
-        // Obtener todos los días únicos del período
         List<String> daysInPeriod = getUniqueDaysInPeriod(startDate, endDate);
 
         for (courses course : coursesWithoutSchedule) {
             if (course.getTeacherSubject() == null) continue; // Saltar cursos sin profesor/materia asignada
 
-            subjects subject = course.getTeacherSubject().getSubject();
             teachers assignedTeacher = course.getTeacherSubject().getTeacher();
+            subjects subject = course.getTeacherSubject().getSubject();
 
-            // Obtener todos los profesores disponibles para esta materia (incluyendo el asignado)
-            List<TeacherSubject> teacherSubjects = teacherSubjectRepo.findBySubject_Id(subject.getId());
+            // VALIDACIÓN CRÍTICA: Un profesor solo puede estar asociado a UNA materia
+            List<TeacherSubject> teacherAssociations = teacherSubjectRepo.findByTeacher_Id(assignedTeacher.getId());
+            if (teacherAssociations.size() > 1) {
+                throw new RuntimeException("ERROR DE CONFIGURACIÓN: El profesor " + assignedTeacher.getTeacherName() +
+                    " está asociado a múltiples materias (" + teacherAssociations.size() + "). " +
+                    "Cada profesor debe estar asociado únicamente a UNA materia.");
+            }
 
             boolean courseAssigned = false;
 
-            // Intentar asignar el curso a un profesor disponible
+            // Try to assign the course ONLY to the assigned teacher (no alternatives)
             for (String dayName : daysInPeriod) {
                 if (courseAssigned) break;
 
-                // Primero intentar con el profesor asignado al curso
                 if (tryAssignCourseToTeacher(course, assignedTeacher, dayName, generatedSchedules)) {
                     courseAssigned = true;
                     totalGenerated++;
                     break;
                 }
-
-                // Si no se puede asignar al profesor principal, intentar con otros profesores de la materia
-                for (TeacherSubject teacherSubject : teacherSubjects) {
-                    teachers teacher = teacherSubject.getTeacher();
-                    if (teacher.getId() == assignedTeacher.getId()) continue; // Ya intentamos con este
-
-                    if (tryAssignCourseToTeacher(course, teacher, dayName, generatedSchedules)) {
-                        courseAssigned = true;
-                        totalGenerated++;
-                        break;
-                    }
-                }
             }
+
+            // If course could not be assigned, continue with next one (not critical error)
         }
 
-        // Persistir todos los horarios generados
         if (!generatedSchedules.isEmpty()) {
             scheduleRepo.saveAll(generatedSchedules);
         }
@@ -299,5 +270,21 @@ public class ScheduleGenerationService {
                 (slot.getStartTime().isBefore(existing.getEndTime()) &&
                  slot.getEndTime().isAfter(existing.getStartTime()))
             );
+    }
+
+    private ScheduleHistoryDTO toDTO(schedule_history h) {
+        ScheduleHistoryDTO dto = new ScheduleHistoryDTO();
+        dto.setId(h.getId());
+        dto.setExecutedBy(h.getExecutedBy());
+        dto.setExecutedAt(h.getExecutedAt());
+        dto.setStatus(h.getStatus());
+        dto.setTotalGenerated(h.getTotalGenerated());
+        dto.setMessage(h.getMessage());
+        dto.setPeriodStart(h.getPeriodStart());
+        dto.setPeriodEnd(h.getPeriodEnd());
+        dto.setDryRun(h.isDryRun());
+        dto.setForce(h.isForce());
+        dto.setParams(h.getParams());
+        return dto;
     }
 }

@@ -37,12 +37,10 @@ public class CourseControllerTest extends BaseControllerTest {
     public void testCreateCourse() throws Exception {
         CourseDTO input = new CourseDTO();
         input.setCourseName("Matemáticas 101");
-        input.setTeacherSubjectId(1);
 
         CourseDTO output = new CourseDTO();
         output.setCourseId(1);
         output.setCourseName("Matemáticas 101");
-        output.setTeacherSubjectId(1);
 
         when(courseService.create(any(CourseDTO.class))).thenReturn(output);
 

@@ -34,6 +34,24 @@ public class SubjectController {
                     .body(new responseDTO("ERROR", errorMessage));
         }
 
+        // VALIDACIÓN MANUAL ADICIONAL: Verificar que el nombre NO contenga números
+        if (dto.getSubjectName() != null && dto.getSubjectName().matches(".*\\d.*")) {
+            return ResponseEntity.badRequest()
+                    .body(new responseDTO("ERROR", "El nombre de la materia no puede contener números"));
+        }
+
+        // VALIDACIÓN MANUAL ADICIONAL: Verificar longitud
+        if (dto.getSubjectName() != null) {
+            if (dto.getSubjectName().length() < 5) {
+                return ResponseEntity.badRequest()
+                        .body(new responseDTO("ERROR", "El nombre de la materia debe tener al menos 5 caracteres"));
+            }
+            if (dto.getSubjectName().length() > 20) {
+                return ResponseEntity.badRequest()
+                        .body(new responseDTO("ERROR", "El nombre de la materia debe tener máximo 20 caracteres"));
+            }
+        }
+
         try {
             service.create(dto);
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -77,6 +95,24 @@ public class SubjectController {
                     .orElse("Error de validación");
             return ResponseEntity.badRequest()
                     .body(new responseDTO("ERROR", errorMessage));
+        }
+
+        // VALIDACIÓN MANUAL ADICIONAL: Verificar que el nombre NO contenga números
+        if (dto.getSubjectName() != null && dto.getSubjectName().matches(".*\\d.*")) {
+            return ResponseEntity.badRequest()
+                    .body(new responseDTO("ERROR", "El nombre de la materia no puede contener números"));
+        }
+
+        // VALIDACIÓN MANUAL ADICIONAL: Verificar longitud
+        if (dto.getSubjectName() != null) {
+            if (dto.getSubjectName().length() < 5) {
+                return ResponseEntity.badRequest()
+                        .body(new responseDTO("ERROR", "El nombre de la materia debe tener al menos 5 caracteres"));
+            }
+            if (dto.getSubjectName().length() > 20) {
+                return ResponseEntity.badRequest()
+                        .body(new responseDTO("ERROR", "El nombre de la materia debe tener máximo 20 caracteres"));
+            }
         }
 
         try {

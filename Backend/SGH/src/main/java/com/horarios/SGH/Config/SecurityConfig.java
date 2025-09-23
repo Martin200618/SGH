@@ -3,6 +3,7 @@ package com.horarios.SGH.Config;
 import com.horarios.SGH.jwt.JwtAuthenticationEntryPoint;
 import com.horarios.SGH.jwt.JwtAuthenticationFilter;
 import com.horarios.SGH.jwt.JwtTokenProvider;
+import com.horarios.SGH.Service.TokenRevocationService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,8 +29,9 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(UserDetailsService userDetailsService,
-                                                           JwtTokenProvider jwtTokenProvider) {
-        return new JwtAuthenticationFilter(userDetailsService, jwtTokenProvider);
+                                                          JwtTokenProvider jwtTokenProvider,
+                                                          TokenRevocationService tokenRevocationService) {
+        return new JwtAuthenticationFilter(userDetailsService, jwtTokenProvider, tokenRevocationService);
     }
 
     @Bean
@@ -48,19 +50,32 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
+                // Endpoints públicos (sin autenticación)
                 .requestMatchers(
-                    "/auth/**",          // login y register publicos
-                    "/teachers/**",      // profesores publicos para dashboard
-                    "/subjects/**",      // materias publicas para dashboard
-                    "/courses/**",       // cursos publicos para dashboard
-                    "/schedules/**",     // horarios publicos para dashboard
-                    "/schedules-crud/**", // horarios crud publicos para dashboard
+                    "/auth/**",          // login y register
+                    "/teachers",         // GET profesores para dashboard
+                    "/subjects/**",      // materias para dashboard
+                    "/courses/**",       // cursos para dashboard
+                    "/schedules/**",     // horarios para dashboard
+                    "/schedules-crud/by-course/**",  // ver horarios de curso
+                    "/schedules-crud/by-teacher/**", // ver horarios de profesor
+                    "/schedules-crud",   // ver todos los horarios
                     "/schedules/history", // historial de horarios
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/v3/api-docs/**",
                     "/api-docs/**"
                 ).permitAll()
+                // Métodos que requieren autenticación
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/teachers/**").authenticated()
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/teachers/**").authenticated()
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/teachers/**").authenticated()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/subjects/**").authenticated()
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/subjects/**").authenticated()
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/subjects/**").authenticated()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/courses/**").authenticated()
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/courses/**").authenticated()
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/courses/**").authenticated()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
