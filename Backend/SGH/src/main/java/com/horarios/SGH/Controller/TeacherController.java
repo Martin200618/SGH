@@ -35,6 +35,12 @@ public class TeacherController {
                         .body(new responseDTO("ERROR", errorMessage));
             }
 
+            // VALIDACIÓN MANUAL ADICIONAL: Verificar que el nombre NO contenga números
+            if (dto.getTeacherName() != null && dto.getTeacherName().matches(".*\\d.*")) {
+                return ResponseEntity.badRequest()
+                        .body(new responseDTO("ERROR", "El nombre del profesor no puede contener números"));
+            }
+
             // Verificar que la materia existe
             Optional<subjects> subject = Isubjects.findById(dto.getSubjectId());
             if (subject.isEmpty()) {

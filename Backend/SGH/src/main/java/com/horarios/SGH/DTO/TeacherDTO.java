@@ -1,9 +1,15 @@
 package com.horarios.SGH.DTO;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 
 public class TeacherDTO {
 
+    @NotBlank(message = "El nombre del profesor no puede estar vacío")
+    @Size(min = 2, max = 100, message = "El nombre del profesor debe tener entre 2 y 100 caracteres")
+    @Pattern(regexp = "^[a-zA-ZÀ-ÿ\\s]+$", message = "El nombre del profesor solo puede contener letras y espacios")
     private String teacherName;
 
     // Para compatibilidad con el servicio existente

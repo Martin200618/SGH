@@ -34,6 +34,12 @@ public class SubjectController {
                     .body(new responseDTO("ERROR", errorMessage));
         }
 
+        // VALIDACIÓN MANUAL ADICIONAL: Verificar que el nombre NO contenga números
+        if (dto.getSubjectName() != null && dto.getSubjectName().matches(".*\\d.*")) {
+            return ResponseEntity.badRequest()
+                    .body(new responseDTO("ERROR", "El nombre de la materia no puede contener números"));
+        }
+
         try {
             service.create(dto);
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -77,6 +83,12 @@ public class SubjectController {
                     .orElse("Error de validación");
             return ResponseEntity.badRequest()
                     .body(new responseDTO("ERROR", errorMessage));
+        }
+
+        // VALIDACIÓN MANUAL ADICIONAL: Verificar que el nombre NO contenga números
+        if (dto.getSubjectName() != null && dto.getSubjectName().matches(".*\\d.*")) {
+            return ResponseEntity.badRequest()
+                    .body(new responseDTO("ERROR", "El nombre de la materia no puede contener números"));
         }
 
         try {

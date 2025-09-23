@@ -1,7 +1,17 @@
 package com.horarios.SGH.DTO;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+
 public class CourseDTO {
     private int courseId;
+
+    @NotNull(message = "El nombre del curso no puede ser nulo")
+    @NotBlank(message = "El nombre del curso no puede estar vacío")
+    @Size(min = 1, max = 2, message = "El nombre del curso debe tener entre 1 y 2 caracteres")
+    @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "El nombre del curso solo puede contener letras y números")
     private String courseName;
 
     // Preferido: id de la relación docente–materia
