@@ -3,6 +3,7 @@ package com.horarios.SGH.Config;
 import com.horarios.SGH.jwt.JwtAuthenticationEntryPoint;
 import com.horarios.SGH.jwt.JwtAuthenticationFilter;
 import com.horarios.SGH.jwt.JwtTokenProvider;
+import com.horarios.SGH.Service.TokenRevocationService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,8 +29,9 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(UserDetailsService userDetailsService,
-                                                           JwtTokenProvider jwtTokenProvider) {
-        return new JwtAuthenticationFilter(userDetailsService, jwtTokenProvider);
+                                                          JwtTokenProvider jwtTokenProvider,
+                                                          TokenRevocationService tokenRevocationService) {
+        return new JwtAuthenticationFilter(userDetailsService, jwtTokenProvider, tokenRevocationService);
     }
 
     @Bean

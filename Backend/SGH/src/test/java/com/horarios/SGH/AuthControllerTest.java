@@ -5,6 +5,7 @@ import com.horarios.SGH.Controller.AuthController;
 import com.horarios.SGH.DTO.LoginRequestDTO;
 import com.horarios.SGH.DTO.LoginResponseDTO;
 import com.horarios.SGH.Service.AuthService;
+import com.horarios.SGH.Service.TokenRevocationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -27,6 +28,9 @@ public class AuthControllerTest {
 
     @MockBean
     private AuthService authService;
+
+    @MockBean
+    private TokenRevocationService tokenRevocationService;
 
     @Autowired
     private ObjectMapper objectMapper;
