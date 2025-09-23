@@ -28,9 +28,7 @@ public class CourseService {
         courses entity = new courses();
         entity.setCourseName(dto.getCourseName());
 
-        TeacherSubject ts = resolveTeacherSubject(dto);
-        entity.setTeacherSubject(ts);
-
+        // Solo asignar director de grado si se especifica
         if (dto.getGradeDirectorId() != null) {
             teachers director = teacherRepo.findById(dto.getGradeDirectorId()).orElseThrow();
             entity.setGradeDirector(director);
@@ -38,7 +36,6 @@ public class CourseService {
 
         courses saved = courseRepo.save(entity);
         dto.setCourseId(saved.getId());
-        dto.setTeacherSubjectId(ts != null ? ts.getId() : null);
         return dto;
     }
 
@@ -47,11 +44,6 @@ public class CourseService {
             CourseDTO dto = new CourseDTO();
             dto.setCourseId(c.getId());
             dto.setCourseName(c.getCourseName());
-            if (c.getTeacherSubject() != null) {
-                dto.setTeacherSubjectId(c.getTeacherSubject().getId());
-                dto.setTeacherId(c.getTeacherSubject().getTeacher().getId());
-                dto.setSubjectId(c.getTeacherSubject().getSubject().getId());
-            }
             dto.setGradeDirectorId(c.getGradeDirector() != null ? c.getGradeDirector().getId() : null);
             return dto;
         }).collect(Collectors.toList());
@@ -62,11 +54,6 @@ public class CourseService {
             CourseDTO dto = new CourseDTO();
             dto.setCourseId(c.getId());
             dto.setCourseName(c.getCourseName());
-            if (c.getTeacherSubject() != null) {
-                dto.setTeacherSubjectId(c.getTeacherSubject().getId());
-                dto.setTeacherId(c.getTeacherSubject().getTeacher().getId());
-                dto.setSubjectId(c.getTeacherSubject().getSubject().getId());
-            }
             dto.setGradeDirectorId(c.getGradeDirector() != null ? c.getGradeDirector().getId() : null);
             return dto;
         }).orElse(null);
@@ -77,8 +64,6 @@ public class CourseService {
         if (entity == null) return null;
 
         entity.setCourseName(dto.getCourseName());
-        TeacherSubject ts = resolveTeacherSubject(dto);
-        entity.setTeacherSubject(ts);
 
         if (dto.getGradeDirectorId() != null) {
             teachers director = teacherRepo.findById(dto.getGradeDirectorId()).orElseThrow();
@@ -89,7 +74,6 @@ public class CourseService {
 
         courses updated = courseRepo.save(entity);
         dto.setCourseId(updated.getId());
-        dto.setTeacherSubjectId(ts != null ? ts.getId() : null);
         return dto;
     }
 
@@ -97,20 +81,4 @@ public class CourseService {
         courseRepo.deleteById(id);
     }
 
-    private TeacherSubject resolveTeacherSubject(CourseDTO dto) {
-        if (dto.getTeacherSubjectId() != null) {
-            return teacherSubjectRepo.findById(dto.getTeacherSubjectId()).orElseThrow();
-        } else if (dto.getTeacherId() != null && dto.getSubjectId() != null) {
-            return teacherSubjectRepo.findByTeacher_IdAndSubject_Id(dto.getTeacherId(), dto.getSubjectId())
-                    .orElseGet(() -> {
-                        teachers t = teacherRepo.findById(dto.getTeacherId()).orElseThrow();
-                        subjects s = subjectRepo.findById(dto.getSubjectId()).orElseThrow();
-                        TeacherSubject newTs = new TeacherSubject();
-                        newTs.setTeacher(t);
-                        newTs.setSubject(s);
-                        return teacherSubjectRepo.save(newTs);
-                    });
-        }
-        return null;
-    }
 }

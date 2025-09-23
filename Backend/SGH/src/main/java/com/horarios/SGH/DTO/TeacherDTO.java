@@ -3,7 +3,6 @@ package com.horarios.SGH.DTO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import java.util.List;
 
 public class TeacherDTO {
 
@@ -16,14 +15,10 @@ public class TeacherDTO {
     private int teacherId;
     private int subjectId;
 
-    // Lista de especializaciones (materias que imparte)
-    private List<String> specializations;
-
     public TeacherDTO() {}
 
-    public TeacherDTO(String teacherName, List<String> specializations) {
+    public TeacherDTO(String teacherName) {
         this.teacherName = teacherName;
-        this.specializations = specializations;
     }
 
     // Getters y Setters
@@ -35,13 +30,6 @@ public class TeacherDTO {
         this.teacherName = teacherName;
     }
 
-    public List<String> getSpecializations() {
-        return specializations;
-    }
-
-    public void setSpecializations(List<String> specializations) {
-        this.specializations = specializations;
-    }
 
     // Métodos para compatibilidad con el servicio existente
     public int getTeacherId() {

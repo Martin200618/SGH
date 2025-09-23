@@ -14,13 +14,6 @@ public class CourseDTO {
     @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "El nombre del curso solo puede contener letras y números")
     private String courseName;
 
-    // Preferido: id de la relación docente–materia
-    private Integer teacherSubjectId;
-
-    // Compatibilidad: si no mandas teacherSubjectId, puedes mandar teacherId + subjectId
-    private Integer teacherId;
-    private Integer subjectId;
-
     // Director de grado opcional
     private Integer gradeDirectorId;
 
@@ -38,30 +31,6 @@ public class CourseDTO {
 
     public void setCourseName(String courseName) {
         this.courseName = courseName;
-    }
-
-    public Integer getTeacherSubjectId() {
-        return teacherSubjectId;
-    }
-
-    public void setTeacherSubjectId(Integer teacherSubjectId) {
-        this.teacherSubjectId = teacherSubjectId;
-    }
-
-    public Integer getTeacherId() {
-        return teacherId;
-    }
-
-    public void setTeacherId(Integer teacherId) {
-        this.teacherId = teacherId;
-    }
-
-    public Integer getSubjectId() {
-        return subjectId;
-    }
-
-    public void setSubjectId(Integer subjectId) {
-        this.subjectId = subjectId;
     }
 
     public Integer getGradeDirectorId() {
