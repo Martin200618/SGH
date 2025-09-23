@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class TeacherService {
+public class TeacherService implements ITeacherService {
 
     private final Isubjects subjectRepo;
     private final Iteachers teacherRepo;

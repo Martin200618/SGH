@@ -3,6 +3,7 @@ package com.horarios.SGH.Controller;
 import com.horarios.SGH.DTO.CourseDTO;
 import com.horarios.SGH.DTO.responseDTO;
 import com.horarios.SGH.Service.CourseService;
+import com.horarios.SGH.Service.ValidationUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,6 @@ public class CourseController {
 
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody CourseDTO dto, BindingResult bindingResult) {
-        // Validar errores de validación del DTO
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getFieldErrors().stream()
                     .map(error -> error.getDefaultMessage())
@@ -30,16 +30,11 @@ public class CourseController {
                     .body(new responseDTO("ERROR", errorMessage));
         }
 
-        // VALIDACIÓN MANUAL ADICIONAL: Verificar longitud
-        if (dto.getCourseName() != null) {
-            if (dto.getCourseName().length() < 1) {
-                return ResponseEntity.badRequest()
-                        .body(new responseDTO("ERROR", "El nombre del curso debe tener al menos 1 caracter"));
-            }
-            if (dto.getCourseName().length() > 2) {
-                return ResponseEntity.badRequest()
-                        .body(new responseDTO("ERROR", "El nombre del curso debe tener máximo 2 caracteres"));
-            }
+        try {
+            ValidationUtils.validateCourseName(dto.getCourseName());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(new responseDTO("ERROR", e.getMessage()));
         }
 
         try {
@@ -63,7 +58,6 @@ public class CourseController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable int id, @Valid @RequestBody CourseDTO dto, BindingResult bindingResult) {
-        // Validar errores de validación del DTO
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getFieldErrors().stream()
                     .map(error -> error.getDefaultMessage())
@@ -73,16 +67,11 @@ public class CourseController {
                     .body(new responseDTO("ERROR", errorMessage));
         }
 
-        // VALIDACIÓN MANUAL ADICIONAL: Verificar longitud
-        if (dto.getCourseName() != null) {
-            if (dto.getCourseName().length() < 1) {
-                return ResponseEntity.badRequest()
-                        .body(new responseDTO("ERROR", "El nombre del curso debe tener al menos 1 caracter"));
-            }
-            if (dto.getCourseName().length() > 2) {
-                return ResponseEntity.badRequest()
-                        .body(new responseDTO("ERROR", "El nombre del curso debe tener máximo 2 caracteres"));
-            }
+        try {
+            ValidationUtils.validateCourseName(dto.getCourseName());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(new responseDTO("ERROR", e.getMessage()));
         }
 
         try {

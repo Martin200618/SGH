@@ -6,7 +6,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
-public class TokenRevocationService {
+public class TokenRevocationService implements ITokenRevocationService {
 
     // Almacén de tokens revocados (en producción usarías Redis o BD)
     private final Set<String> revokedTokens = ConcurrentHashMap.newKeySet();

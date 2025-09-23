@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class CourseService {
+public class CourseService implements ICourseService {
 
     private final Icourses courseRepo;
     private final Iteachers teacherRepo;

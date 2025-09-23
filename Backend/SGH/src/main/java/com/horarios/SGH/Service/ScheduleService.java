@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class ScheduleService {
+public class ScheduleService implements IScheduleService {
 
     private final IScheduleRepository scheduleRepo;
     private final ITeacherAvailabilityRepository availabilityRepo;
@@ -47,10 +47,11 @@ public class ScheduleService {
     }
 
     @Transactional
-    public List<ScheduleDTO> crearHorario(List<ScheduleDTO> asignaciones, String executedBy) {
+    @Override
+    public List<ScheduleDTO> createSchedule(List<ScheduleDTO> assignments, String executedBy) {
         List<schedule> entities = new ArrayList<>();
 
-        for (ScheduleDTO dto : asignaciones) {
+        for (ScheduleDTO dto : assignments) {
             courses course = courseRepo.findById(dto.getCourseId()).orElseThrow();
 
             teachers teacher;
@@ -102,22 +103,26 @@ public class ScheduleService {
     }
 
     @Transactional(readOnly = true)
-    public List<ScheduleDTO> obtenerPorNombre(String scheduleName) {
+    @Override
+    public List<ScheduleDTO> getByName(String scheduleName) {
         return scheduleRepo.findByScheduleName(scheduleName)
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
 
-    public List<ScheduleDTO> obtenerPorCurso(Integer courseId) {
+    @Override
+    public List<ScheduleDTO> getByCourse(Integer courseId) {
         return scheduleRepo.findByCourseId(courseId).stream().map(this::toDTO).collect(Collectors.toList());
     }
 
-    public List<ScheduleDTO> obtenerPorProfesor(Integer teacherId) {
+    @Override
+    public List<ScheduleDTO> getByTeacher(Integer teacherId) {
         return scheduleRepo.findByTeacherId(teacherId).stream().map(this::toDTO).collect(Collectors.toList());
     }
 
-    public List<ScheduleDTO> obtenerTodos() {
+    @Override
+    public List<ScheduleDTO> getAll() {
         return scheduleRepo.findAll().stream().map(this::toDTO).collect(Collectors.toList());
     }
 

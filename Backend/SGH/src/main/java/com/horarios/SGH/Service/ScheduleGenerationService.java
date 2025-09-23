@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class ScheduleGenerationService {
+public class ScheduleGenerationService implements IScheduleGenerationService {
 
     private final IScheduleHistory historyRepository;
     private final Icourses courseRepo;
@@ -44,7 +44,6 @@ public class ScheduleGenerationService {
         history.setMessage("Iniciando generación");
         history.setTotalGenerated(0);
 
-        // Parámetros de ejecución
         history.setPeriodStart(request.getPeriodStart());
         history.setPeriodEnd(request.getPeriodEnd());
         history.setDryRun(request.isDryRun());
@@ -60,10 +59,10 @@ public class ScheduleGenerationService {
             int totalGenerated = 0;
 
             if (!request.isDryRun()) {
-                // Generación real de horarios por cursos
+                // Real schedule generation for courses
                 totalGenerated = generateSchedulesForPeriod(request.getPeriodStart(), request.getPeriodEnd(), request.getParams());
             } else {
-                // Simulación: contar cursos sin horario asignado
+                // Simulation: count courses without assigned schedule
                 List<courses> coursesWithoutSchedule = getCoursesWithoutSchedule();
                 totalGenerated = coursesWithoutSchedule.size();
             }
@@ -83,16 +82,6 @@ public class ScheduleGenerationService {
         return toDTO(history);
     }
 
-    @Transactional(readOnly = true)
-    public Page<ScheduleHistoryDTO> history(int page, int size) {
-        var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "executedAt"));
-        var histories = historyRepository.findAllByOrderByExecutedAtDesc(pageable);
-        List<ScheduleHistoryDTO> content = histories.map(this::toDTO).getContent();
-        return new PageImpl<>(content, pageable, histories.getTotalElements());
-    }
-
-    // -------------------- Privados --------------------
-
     private void validate(ScheduleHistoryDTO r) {
         if (r.getPeriodStart() == null || r.getPeriodEnd() == null) {
             throw new IllegalArgumentException("periodStart y periodEnd son obligatorios");
@@ -107,21 +96,6 @@ public class ScheduleGenerationService {
         // Si !r.isForce(): agregar validación de solapamientos según tu regla si aplica.
     }
 
-    private ScheduleHistoryDTO toDTO(schedule_history h) {
-        ScheduleHistoryDTO dto = new ScheduleHistoryDTO();
-        dto.setId(h.getId());
-        dto.setExecutedBy(h.getExecutedBy());
-        dto.setExecutedAt(h.getExecutedAt());
-        dto.setStatus(h.getStatus());
-        dto.setTotalGenerated(h.getTotalGenerated());
-        dto.setMessage(h.getMessage());
-        dto.setPeriodStart(h.getPeriodStart());
-        dto.setPeriodEnd(h.getPeriodEnd());
-        dto.setDryRun(h.isDryRun());
-        dto.setForce(h.isForce());
-        dto.setParams(h.getParams());
-        return dto;
-    }
 
     /**
      * Genera horarios automáticamente para cursos sin asignación.
@@ -132,12 +106,10 @@ public class ScheduleGenerationService {
      * - No busca profesores alternativos
      */
     private int generateSchedulesForPeriod(LocalDate startDate, LocalDate endDate, String params) {
-        // Obtener cursos que no tienen horario asignado
         List<courses> coursesWithoutSchedule = getCoursesWithoutSchedule();
         List<schedule> generatedSchedules = new ArrayList<>();
         int totalGenerated = 0;
 
-        // Obtener todos los días únicos del período
         List<String> daysInPeriod = getUniqueDaysInPeriod(startDate, endDate);
 
         for (courses course : coursesWithoutSchedule) {
@@ -156,7 +128,7 @@ public class ScheduleGenerationService {
 
             boolean courseAssigned = false;
 
-            // Intentar asignar el curso ÚNICAMENTE al profesor asignado (no buscar alternativas)
+            // Try to assign the course ONLY to the assigned teacher (no alternatives)
             for (String dayName : daysInPeriod) {
                 if (courseAssigned) break;
 
@@ -167,10 +139,9 @@ public class ScheduleGenerationService {
                 }
             }
 
-            // Si no se pudo asignar el curso, continuar con el siguiente (no es error crítico)
+            // If course could not be assigned, continue with next one (not critical error)
         }
 
-        // Persistir todos los horarios generados
         if (!generatedSchedules.isEmpty()) {
             scheduleRepo.saveAll(generatedSchedules);
         }
@@ -299,5 +270,21 @@ public class ScheduleGenerationService {
                 (slot.getStartTime().isBefore(existing.getEndTime()) &&
                  slot.getEndTime().isAfter(existing.getStartTime()))
             );
+    }
+
+    private ScheduleHistoryDTO toDTO(schedule_history h) {
+        ScheduleHistoryDTO dto = new ScheduleHistoryDTO();
+        dto.setId(h.getId());
+        dto.setExecutedBy(h.getExecutedBy());
+        dto.setExecutedAt(h.getExecutedAt());
+        dto.setStatus(h.getStatus());
+        dto.setTotalGenerated(h.getTotalGenerated());
+        dto.setMessage(h.getMessage());
+        dto.setPeriodStart(h.getPeriodStart());
+        dto.setPeriodEnd(h.getPeriodEnd());
+        dto.setDryRun(h.isDryRun());
+        dto.setForce(h.isForce());
+        dto.setParams(h.getParams());
+        return dto;
     }
 }

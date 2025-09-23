@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class SubjectService {
+public class SubjectService implements ISubjectService {
 
     private final Isubjects repo;
 

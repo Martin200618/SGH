@@ -1,7 +1,8 @@
 package com.horarios.SGH.Controller;
 
 import com.horarios.SGH.DTO.ScheduleHistoryDTO;
-import com.horarios.SGH.Service.ScheduleGenerationService;
+import com.horarios.SGH.Service.IScheduleGenerationService;
+import com.horarios.SGH.Service.IScheduleHistoryService;
 import com.horarios.SGH.Service.ScheduleExportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,7 +24,8 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Horarios", description = "Gestión de generación y exportación de horarios")
 public class ScheduleController {
 
-    private final ScheduleGenerationService generationService;
+    private final IScheduleGenerationService generationService;
+    private final IScheduleHistoryService historyService;
     private final ScheduleExportService exportService;
 
     @PostMapping("/generate")
@@ -63,7 +65,7 @@ public class ScheduleController {
             @Parameter(description = "Tamaño de página", example = "10")
             @RequestParam(defaultValue = "10") int size
     ) {
-        return generationService.history(page, size);
+        return historyService.history(page, size);
     }
     
     // PDF por curso

@@ -12,7 +12,7 @@ import com.horarios.SGH.DTO.LoginResponseDTO;
 import com.horarios.SGH.jwt.JwtTokenProvider;
 
 @Service
-public class AuthService {
+public class AuthService implements IAuthService {
 
     private final Iusers repo;
     private final PasswordEncoder encoder;
@@ -29,9 +29,7 @@ public class AuthService {
         this.jwtTokenProvider = jwtTokenProvider;
     }
 
-    // Registra 1 usuario adicional (límite total = 2)
     public String register(String username, String rawPassword) {
-        // Validaciones del username
         if (username == null || username.trim().isEmpty()) {
             throw new IllegalArgumentException("El nombre de usuario no puede estar vacío");
         }
@@ -52,7 +50,6 @@ public class AuthService {
             throw new IllegalArgumentException("El nombre de usuario no puede exceder los 100 caracteres");
         }
 
-        // Validación de contraseña
         if (rawPassword == null || rawPassword.trim().isEmpty()) {
             throw new IllegalArgumentException("La contraseña no puede estar vacía");
         }
@@ -73,13 +70,11 @@ public class AuthService {
         return "Usuario registrado correctamente";
     }
 
-    // Autentica con password en texto plano y genera JWT
     public LoginResponseDTO login(LoginRequestDTO req) {
         authManager.authenticate(
             new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword())
         );
 
-        // Si llega aquí, las credenciales son válidas (DB o master hardcodeado vía UserDetailsService)
         String token = jwtTokenProvider.generateToken(req.getUsername());
         return new LoginResponseDTO(token);
     }

@@ -38,11 +38,11 @@ public class ScheduleCrudController {
         @ApiResponse(responseCode = "400", description = "Error de validación (profesor no disponible, conflicto de horario, etc.)"),
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
-    public List<ScheduleDTO> crearHorario(
+    public List<ScheduleDTO> createSchedule(
             @Parameter(description = "Lista de horarios a crear", required = true)
-            @RequestBody List<ScheduleDTO> asignaciones,
+            @RequestBody List<ScheduleDTO> assignments,
             Authentication auth) {
-        return scheduleService.crearHorario(asignaciones, auth.getName());
+        return scheduleService.createSchedule(assignments, auth.getName());
     }
 
     @GetMapping("/{name}")
@@ -55,10 +55,10 @@ public class ScheduleCrudController {
         @ApiResponse(responseCode = "200", description = "Horarios encontrados"),
         @ApiResponse(responseCode = "403", description = "No autorizado")
     })
-    public List<ScheduleDTO> obtenerPorNombre(
+    public List<ScheduleDTO> getByName(
             @Parameter(description = "Nombre del horario a buscar", example = "Matemáticas")
             @PathVariable String name) {
-        return scheduleService.obtenerPorNombre(name);
+        return scheduleService.getByName(name);
     }
 
     @GetMapping("/by-course/{id}")
@@ -73,7 +73,7 @@ public class ScheduleCrudController {
     public List<ScheduleDTO> getByCourse(
             @Parameter(description = "ID del curso", example = "1")
             @PathVariable Integer id) {
-        return scheduleService.obtenerPorCurso(id);
+        return scheduleService.getByCourse(id);
     }
 
     @GetMapping("/by-teacher/{id}")
@@ -88,11 +88,11 @@ public class ScheduleCrudController {
     public List<ScheduleDTO> getByTeacher(
             @Parameter(description = "ID del profesor", example = "5")
             @PathVariable Integer id) {
-        return scheduleService.obtenerPorProfesor(id);
+        return scheduleService.getByTeacher(id);
     }
 
     @GetMapping
     public List<ScheduleDTO> getAll() {
-        return scheduleService.obtenerTodos();
+        return scheduleService.getAll();
     }
 }
