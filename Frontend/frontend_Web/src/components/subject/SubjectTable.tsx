@@ -37,7 +37,7 @@ const SubjectTable = ({ subjects, onEdit, onDelete }: SubjectTableProps) => {
                   Nombre
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                  Profesores asociados
+                  N. Profesores asociados
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
                   Actos

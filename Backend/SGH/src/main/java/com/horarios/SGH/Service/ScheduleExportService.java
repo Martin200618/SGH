@@ -27,12 +27,16 @@ public class ScheduleExportService implements IScheduleExportService {
 
     private List<String> generateTimes(List<schedule> schedules) {
         Set<String> timeSet = new TreeSet<>();
-        for (schedule s : schedules) {
-            timeSet.add(s.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")));
-        }
-        // Always include break times
+        // Always include break times first
         timeSet.add("09:00");
         timeSet.add("12:00");
+        for (schedule s : schedules) {
+            String startTime = s.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm"));
+            // Exclude schedules that coincide with break times
+            if (!startTime.equals("09:00") && !startTime.equals("12:00")) {
+                timeSet.add(startTime);
+            }
+        }
         List<String> times = new java.util.ArrayList<>();
         for (String startTime : timeSet) {
             String[] parts = startTime.split(":");
@@ -135,9 +139,9 @@ public class ScheduleExportService implements IScheduleExportService {
             for (String day : days) {
                 schedule s = getScheduleForTimeAndDay(horarios, time, day);
                 String content = "";
-                if (time.contains("9:00 AM")) {
+                if (time.equals("9:00 AM - 9:30 AM")) {
                     content = "Descanso";
-                } else if (time.contains("12:00 PM")) {
+                } else if (time.equals("12:00 PM - 1:00 PM")) {
                     content = "Almuerzo";
                 } else if (s != null) {
                     String docente = s.getTeacherId() != null ? s.getTeacherId().getTeacherName() : "";
@@ -147,9 +151,9 @@ public class ScheduleExportService implements IScheduleExportService {
 
                 PdfPCell contentCell = new PdfPCell(new Phrase(content, cellFont));
                 contentCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                if (time.contains("9:00 AM")) {
+                if (time.equals("9:00 AM - 9:30 AM")) {
                     contentCell.setBackgroundColor(new BaseColor(255, 255, 204)); // Amarillo claro para descanso
-                } else if (time.contains("12:00 PM")) {
+                } else if (time.equals("12:00 PM - 1:00 PM")) {
                     contentCell.setBackgroundColor(new BaseColor(255, 255, 153)); // Amarillo claro para almuerzo
                 }
                 table.addCell(contentCell);
@@ -243,9 +247,9 @@ public class ScheduleExportService implements IScheduleExportService {
                 String day = days[i];
                 schedule s = getScheduleForTimeAndDay(horarios, time, day);
                 String content = "";
-                if (time.contains("9:00 AM")) {
+                if (time.equals("9:00 AM - 9:30 AM")) {
                     content = "Descanso";
-                } else if (time.contains("12:00 PM")) {
+                } else if (time.equals("12:00 PM - 1:00 PM")) {
                     content = "Almuerzo";
                 } else if (s != null) {
                     String docente = s.getTeacherId() != null ? s.getTeacherId().getTeacherName() : "";
@@ -357,9 +361,9 @@ public class ScheduleExportService implements IScheduleExportService {
                 String day = days[i];
                 schedule s = getScheduleForTimeAndDay(horarios, time, day);
                 String content = "";
-                if (time.contains("9:00 AM")) {
+                if (time.equals("9:00 AM - 9:30 AM")) {
                     content = "Descanso";
-                } else if (time.contains("12:00 PM")) {
+                } else if (time.equals("12:00 PM - 1:00 PM")) {
                     content = "Almuerzo";
                 } else if (s != null) {
                     String docente = s.getTeacherId() != null ? s.getTeacherId().getTeacherName() : "";

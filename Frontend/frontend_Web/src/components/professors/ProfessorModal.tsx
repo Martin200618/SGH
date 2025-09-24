@@ -48,19 +48,19 @@ const ProfessorModal: React.FC<ProfessorModalProps> = ({ isOpen, onClose, onSave
   const handleSave = async () => {
     const trimmedName = teacherName.trim();
     if (!trimmedName) {
-      setError('El nombre del profesor es requerido');
+      setError('El nombre completo del profesor es requerido');
       return;
     }
     if (trimmedName.length < 2) {
-      setError('El nombre debe tener al menos 2 caracteres');
+      setError('El nombre completo debe tener al menos 2 caracteres');
       return;
     }
     if (trimmedName.length > 100) {
-      setError('El nombre debe tener máximo 100 caracteres');
+      setError('El nombre completo debe tener máximo 100 caracteres');
       return;
     }
     if (!/^[a-zA-ZÀ-ÿ\s]+$/.test(trimmedName)) {
-      setError('El nombre solo puede contener letras y espacios');
+      setError('El nombre completo solo puede contener letras y espacios');
       return;
     }
     if (subjectId <= 0) {
@@ -114,7 +114,7 @@ const ProfessorModal: React.FC<ProfessorModalProps> = ({ isOpen, onClose, onSave
           <div className="space-y-2">
             <label className="flex items-center text-sm font-semibold text-gray-700">
               <User className="w-4 h-4 mr-2" />
-              Nombre del profesor
+              Nombre completo del profesor
             </label>
             <input
               type="text"
@@ -124,7 +124,7 @@ const ProfessorModal: React.FC<ProfessorModalProps> = ({ isOpen, onClose, onSave
                 if (error) setError('');
               }}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="Ingresa el nombre del profesor"
+              placeholder="Ingresa el nombre completo del profesor"
             />
           </div>
 
