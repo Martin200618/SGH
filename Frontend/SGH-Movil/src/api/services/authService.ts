@@ -10,10 +10,10 @@ export async function loginService(credentials: LoginRequest): Promise<LoginResp
     body: JSON.stringify(credentials),
   });
 
-  const data = await response.json();
+  const data = (await response.json()) as LoginResponse | { error?: string };
 
   if (!response.ok) {
-    throw new Error(data.error || 'Login failed');
+    throw new Error((data as any).error || 'Login failed');
   }
 
   return data as LoginResponse;

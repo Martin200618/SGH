@@ -2,29 +2,65 @@ import React, { useEffect, useState } from 'react';
 import { View, FlatList, ActivityIndicator, Image, Text } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { getAllSchedules } from '../api/services/scheduleCrudService';
+import { getAllCourses } from '../api/services/courseCrudService';
 import { ScheduleDTO } from '../api/types/schedules';
+import { CourseDTO } from '../api/types/courses';
 import ScheduleCard from '../components/Schedules/ScheduleCard';
 import Pagination from '../components/Schedules/Pagination';
 import SearchBar from '../components/Schedules/SearchBar';
 import { styles } from '../styles/schedulesStyles';
 
+interface CourseGroup {
+  courseId: number;
+  schedules: ScheduleDTO[];
+}
+
 export default function SchedulesScreen() {
-  const { token } = useAuth();
-  const [allSchedules, setAllSchedules] = useState<ScheduleDTO[]>([]);
-  const [filteredSchedules, setFilteredSchedules] = useState<ScheduleDTO[]>([]);
+  const { token, loading: authLoading } = useAuth();
+  const [allCourses, setAllCourses] = useState<CourseDTO[]>([]);
+  const [allSchedules, setAllSchedules] = useState<CourseGroup[]>([]);
+  const [filteredCourses, setFilteredCourses] = useState<CourseGroup[]>([]);
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
-  const pageSize = 10;
+  const pageSize = 5;
   const [loading, setLoading] = useState(false);
 
+  // Traer cursos
   useEffect(() => {
+    if (authLoading || !token) return;
+    const fetchCourses = async () => {
+      try {
+        console.log("🔑 Token usado en getAllCourses:", token);
+        const data = await getAllCourses(token);
+        setAllCourses(data);
+      } catch (err) {
+        console.error('Error fetching courses', err);
+      }
+    };
+    fetchCourses();
+  }, [token, authLoading]);
+
+  // Traer horarios y agrupar por courseId
+  useEffect(() => {
+    if (authLoading || !token) return;
     const fetchSchedules = async () => {
-      if (!token) return;
       setLoading(true);
       try {
         const data = await getAllSchedules(token);
-        setAllSchedules(data);
-        setFilteredSchedules(data);
+
+        const grouped: Record<number, ScheduleDTO[]> = {};
+        data.forEach((s) => {
+          if (!grouped[s.courseId]) grouped[s.courseId] = [];
+          grouped[s.courseId].push(s);
+        });
+
+        const coursesGrouped: CourseGroup[] = Object.keys(grouped).map((id) => ({
+          courseId: Number(id),
+          schedules: grouped[Number(id)],
+        }));
+
+        setAllSchedules(coursesGrouped);
+        setFilteredCourses(coursesGrouped);
       } catch (err) {
         console.error('Error fetching schedules', err);
       } finally {
@@ -32,30 +68,33 @@ export default function SchedulesScreen() {
       }
     };
     fetchSchedules();
-  }, [token]);
+  }, [token, authLoading]);
 
+  // Filtro solo por curso
   useEffect(() => {
     const term = search.trim().toLowerCase();
     if (!term) {
-      setFilteredSchedules(allSchedules);
+      setFilteredCourses(allSchedules);
       setCurrentPage(0);
       return;
     }
-    const filtered = allSchedules.filter((s) => {
-      const subject = s.subjectName?.toLowerCase() ?? '';
-      const teacher = s.teacherName?.toLowerCase() ?? '';
-      const course = s.courseName?.toLowerCase() ?? '';
-      return subject.includes(term) || teacher.includes(term) || course.includes(term);
+    const filtered = allSchedules.filter((c) => {
+      const courseName = allCourses.find((x) => x.id === c.courseId)?.courseName || '';
+      return courseName.toLowerCase().includes(term);
     });
-    setFilteredSchedules(filtered);
+    setFilteredCourses(filtered);
     setCurrentPage(0);
-  }, [search, allSchedules]);
+  }, [search, allSchedules, allCourses]);
 
-  const totalPages = Math.ceil(filteredSchedules.length / pageSize);
-  const paginatedData = filteredSchedules.slice(
+  const totalPages = Math.ceil(filteredCourses.length / pageSize);
+  const paginatedData = filteredCourses.slice(
     currentPage * pageSize,
     (currentPage + 1) * pageSize
   );
+
+  const getCourseName = (courseId: number) => {
+    return allCourses.find((c) => c.id === courseId)?.courseName || `Curso ${courseId}`;
+  };
 
   return (
     <View style={styles.container}>
@@ -67,7 +106,7 @@ export default function SchedulesScreen() {
       <SearchBar
         value={search}
         onChange={setSearch}
-        placeholder="Buscar curso, materia o profesor..."
+        placeholder="Buscar curso..."
       />
 
       {loading ? (
@@ -77,8 +116,10 @@ export default function SchedulesScreen() {
           <FlatList
             style={styles.listContainer}
             data={paginatedData}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => <ScheduleCard item={item} />}
+            keyExtractor={(item) => item.courseId.toString()}
+            renderItem={({ item }) => (
+              <ScheduleCard course={item} getCourseName={getCourseName} />
+            )}
           />
           <Pagination
             currentPage={currentPage}
