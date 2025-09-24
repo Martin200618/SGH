@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { FileText, FileSpreadsheet, Image } from "lucide-react";
 import SearchBar from "@/components/dashboard/SearchBar";
 import HeaderSchedule from "@/components/schedule/scheduleCourse/HeaderSchedule";
 import { getScheduleHistory, generateSchedule, ScheduleHistory, Schedule, createSchedule, getSchedulesByCourse } from "@/api/services/scheduleApi";
 import { getAllCourses, Course } from "@/api/services/courseApi";
 import { getAllSubjects, Subject } from "@/api/services/subjectApi";
-import { getAllTeachers, Teacher } from "@/api/services/teacherApi";
+import { getAllTeachers, Teacher, getTeacherAvailability } from "@/api/services/teacherApi";
 
 const exportSchedule = async (format: 'pdf' | 'excel' | 'image', type: 'course' | 'teacher' | 'all', id?: number) => {
   let url = `http://localhost:8085/schedules/${format}`;
@@ -44,6 +45,7 @@ const exportSchedule = async (format: 'pdf' | 'excel' | 'image', type: 'course' 
 export default function SchedulePage() {
   const router = useRouter();
   const [history, setHistory] = useState<ScheduleHistory[]>([]);
+  const [filteredHistory, setFilteredHistory] = useState<ScheduleHistory[]>([]);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -59,6 +61,7 @@ export default function SchedulePage() {
   const [endTime, setEndTime] = useState<string>('');
   const [scheduleEntries, setScheduleEntries] = useState<Schedule[]>([]);
   const [courseSchedules, setCourseSchedules] = useState<Schedule[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
 
@@ -88,6 +91,7 @@ export default function SchedulePage() {
     try {
       const data = await getScheduleHistory();
       setHistory(data.content);
+      setFilteredHistory(data.content);
     } catch (error) {
       console.error("Error loading history:", error);
     }
@@ -120,7 +124,7 @@ export default function SchedulePage() {
       setIsGenerateModalOpen(false);
     } catch (error) {
       console.error("Error generating schedule:", error);
-      alert("Error al generar horario");
+      setErrorMessage("Error al generar horario");
     } finally {
       setLoading(false);
     }
@@ -128,6 +132,18 @@ export default function SchedulePage() {
 
   const handleCloseGenerateModal = () => {
     setIsGenerateModalOpen(false);
+  };
+
+  const handleSearch = (query: string) => {
+    if (query.trim() === '') {
+      setFilteredHistory(history);
+    } else {
+      const filtered = history.filter(item =>
+        item.status.toLowerCase().includes(query.toLowerCase()) ||
+        item.message?.toLowerCase().includes(query.toLowerCase())
+      );
+      setFilteredHistory(filtered);
+    }
   };
 
   const clearForm = () => {
@@ -140,14 +156,54 @@ export default function SchedulePage() {
   };
 
   const addToSchedule = async () => {
+    setErrorMessage('');
     if (!selectedCourse || !selectedDay || !selectedSubject || !selectedTeacher || !startTime || !endTime) {
-      alert('Por favor complete todos los campos');
+      setErrorMessage('Por favor complete todos los campos');
+      return;
+    }
+
+    // Validar que no se programe durante los descansos
+    const startHour = parseInt(startTime.split(':')[0]);
+    const startMinute = parseInt(startTime.split(':')[1]);
+    const endHour = parseInt(endTime.split(':')[0]);
+    const endMinute = parseInt(endTime.split(':')[1]);
+
+    // Convertir a minutos desde medianoche para facilitar comparación
+    const startMinutes = startHour * 60 + startMinute;
+    const endMinutes = endHour * 60 + endMinute;
+
+    // Descanso de 9:00 AM (30 minutos)
+    const breakStart = 9 * 60; // 9:00 AM
+    const breakEnd = 9 * 60 + 30; // 9:30 AM
+
+    // Almuerzo de 12:00 PM (1 hora)
+    const lunchStart = 12 * 60; // 12:00 PM
+    const lunchEnd = 13 * 60; // 1:00 PM
+
+    // Verificar si el horario se solapa con el descanso
+    if ((startMinutes < breakEnd && endMinutes > breakStart) ||
+        (startMinutes < lunchEnd && endMinutes > lunchStart)) {
+      setErrorMessage('No se puede programar clases durante los tiempos de descanso (9:00-9:30 AM) o almuerzo (12:00-1:00 PM)');
       return;
     }
     const course = courses.find(c => c.courseId === selectedCourse);
     const subject = subjects.find(s => s.subjectId === selectedSubject);
     const teacher = teachers.find(t => t.teacherId === selectedTeacher);
     if (!course || !subject || !teacher) return;
+
+    // Validar disponibilidad del profesor
+    const availabilities = await getTeacherAvailability(selectedTeacher);
+    const dayAvailability = availabilities.find(a => a.day === selectedDay);
+    if (!dayAvailability) {
+      setErrorMessage('El profesor no tiene disponibilidad en ese día');
+      return;
+    }
+    const inAM = dayAvailability.amStart && dayAvailability.amEnd && startTime >= dayAvailability.amStart && endTime <= dayAvailability.amEnd;
+    const inPM = dayAvailability.pmStart && dayAvailability.pmEnd && startTime >= dayAvailability.pmStart && endTime <= dayAvailability.pmEnd;
+    if (!inAM && !inPM) {
+      setErrorMessage('El profesor no tiene disponibilidad en ese horario');
+      return;
+    }
 
     const newEntry: Omit<Schedule, 'id'> = {
       courseId: selectedCourse,
@@ -167,7 +223,7 @@ export default function SchedulePage() {
       clearForm();
     } catch (error) {
       console.error("Error creating schedule:", error);
-      alert("Error al crear el horario");
+      setErrorMessage("Error al crear el horario");
     }
   };
 
@@ -187,6 +243,9 @@ export default function SchedulePage() {
     schedules.forEach(schedule => {
       timeSet.add(schedule.startTime);
     });
+    // Always include break times
+    timeSet.add('08:00');
+    timeSet.add('12:00');
     const sortedTimes = Array.from(timeSet).sort();
     const times: string[] = [];
     sortedTimes.forEach(startTime => {
@@ -214,12 +273,17 @@ export default function SchedulePage() {
     return schedules.find(s => s.startTime.startsWith(scheduleTime) && s.day === day);
   };
 
-  const renderScheduleTable = (schedules: Schedule[]) => {
+  const renderScheduleTable = (schedules: Schedule[], courseId?: number) => {
     const times = generateTimes(schedules);
     const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+    const course = courseId ? courses.find(c => c.courseId === courseId) : null;
+    const courseName = course ? course.courseName : 'Curso';
 
     return (
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="p-4 bg-gray-100 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-800">Horario del {courseName}</h3>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-100 border-b border-gray-200">
@@ -242,8 +306,9 @@ export default function SchedulePage() {
                   </td>
                   {days.map((day) => {
                     const schedule = getScheduleForTimeAndDay(schedules, time, day);
-                    const isLunch = time.includes("12:00 PM");
-                    const content = isLunch ? "Almuerzo" : schedule ? `${schedule.teacherName || 'Profesor'}/${schedule.subjectName || 'Materia'}` : "";
+                    const isLunch = time === "12:00 PM - 1:00 PM";
+                    const isBreak = time === "8:00 AM - 9:00 AM";
+                    const content = schedule ? `${schedule.teacherName || 'Profesor'}/${schedule.subjectName || 'Materia'}` : isLunch ? "Almuerzo" : isBreak ? "Descanso" : "";
 
                     return (
                       <td
@@ -251,9 +316,11 @@ export default function SchedulePage() {
                         className={`px-6 py-4 text-center text-sm ${
                           isLunch
                             ? 'bg-orange-100 text-orange-800 font-medium'
-                            : content
-                              ? 'text-blue-600 hover:bg-blue-50 cursor-pointer transition-colors'
-                              : 'text-gray-400'
+                            : isBreak
+                              ? 'bg-yellow-100 text-yellow-800 font-medium'
+                              : content
+                                ? 'bg-blue-100 text-blue-800 font-medium'
+                                : 'text-gray-400'
                         }`}
                       >
                         {content}
@@ -276,94 +343,74 @@ export default function SchedulePage() {
         <HeaderSchedule />
 
         <div className="my-6">
-          <SearchBar />
+          <SearchBar placeholder="Buscar por estado o mensaje..." onSearch={handleSearch} />
         </div>
 
-        {/* Ver Horario de Curso */}
-        <div className="my-6">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-lg font-semibold mb-4 text-gray-800">Ver Horario de Curso</h2>
-            <div className="flex space-x-4">
-              <select
-                value={selectedCourse || ''}
-                onChange={(e) => {
-                  const courseId = Number(e.target.value) || '';
-                  setSelectedCourse(courseId);
-                  if (courseId) loadCourseSchedules(courseId);
-                }}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Seleccionar Curso</option>
-                {courses.map((course) => (
-                  <option key={course.courseId} value={course.courseId}>
-                    {course.courseName}
-                  </option>
-                ))}
-              </select>
-            </div>
+        {errorMessage && (
+          <div className="my-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <span className="block sm:inline">{errorMessage}</span>
+            <button
+              onClick={() => setErrorMessage('')}
+              className="absolute top-0 bottom-0 right-0 px-4 py-3"
+            >
+              <span className="text-red-500">×</span>
+            </button>
           </div>
-        </div>
+        )}
 
         {/* Reportes */}
         <div className="my-6">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-lg font-semibold mb-4 text-gray-800">Exportar Horarios</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <h3 className="font-medium text-gray-700">PDF</h3>
-                <div className="space-y-2">
-                  <button
-                    onClick={() => exportSchedule('pdf', 'all')}
-                    className="w-full px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                  >
-                    Todos los Profesores
-                  </button>
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            <h2 className="text-xl font-bold mb-6 text-gray-800 flex items-center">
+              <span className="mr-2">📤</span>
+              Exportar Horarios
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="group flex flex-col items-center p-6 bg-gradient-to-br from-red-50 to-red-100 rounded-xl hover:from-red-100 hover:to-red-200 transition-all duration-300 cursor-pointer border border-red-200 hover:border-red-300 hover:shadow-lg hover:-translate-y-1" onClick={() => exportSchedule('pdf', 'all')}>
+                <div className="p-3 bg-red-500 rounded-full mb-3 group-hover:bg-red-600 transition-colors">
+                  <FileText className="w-6 h-6 text-white" />
                 </div>
+                <span className="text-sm font-semibold text-gray-800 mb-1">PDF</span>
+                <span className="text-xs text-gray-600">Profesores</span>
               </div>
-
-              <div className="space-y-2">
-                <h3 className="font-medium text-gray-700">Excel</h3>
-                <div className="space-y-2">
-                  <button
-                    onClick={() => exportSchedule('excel', 'all')}
-                    className="w-full px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                  >
-                    Todos los Profesores
-                  </button>
+              <div className="group flex flex-col items-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl hover:from-green-100 hover:to-green-200 transition-all duration-300 cursor-pointer border border-green-200 hover:border-green-300 hover:shadow-lg hover:-translate-y-1" onClick={() => exportSchedule('excel', 'all')}>
+                <div className="p-3 bg-green-500 rounded-full mb-3 group-hover:bg-green-600 transition-colors">
+                  <FileSpreadsheet className="w-6 h-6 text-white" />
                 </div>
+                <span className="text-sm font-semibold text-gray-800 mb-1">Excel</span>
+                <span className="text-xs text-gray-600">Profesores</span>
               </div>
-
-              <div className="space-y-2">
-                <h3 className="font-medium text-gray-700">Imagen</h3>
-                <div className="space-y-2">
-                  <button
-                    onClick={() => exportSchedule('image', 'all')}
-                    className="w-full px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                  >
-                    Todos los Horarios
-                  </button>
-                  <button
-                    onClick={() => exportSchedule('image', 'all', 0)}
-                    className="w-full px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
-                  >
-                    Profesores
-                  </button>
+              <div className="group flex flex-col items-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl hover:from-blue-100 hover:to-blue-200 transition-all duration-300 cursor-pointer border border-blue-200 hover:border-blue-300 hover:shadow-lg hover:-translate-y-1" onClick={() => exportSchedule('image', 'all')}>
+                <div className="p-3 bg-blue-500 rounded-full mb-3 group-hover:bg-blue-600 transition-colors">
+                  <Image className="w-6 h-6 text-white" />
                 </div>
+                <span className="text-sm font-semibold text-gray-800 mb-1">Imagen</span>
+                <span className="text-xs text-gray-600">Horarios</span>
+              </div>
+              <div className="group flex flex-col items-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl hover:from-purple-100 hover:to-purple-200 transition-all duration-300 cursor-pointer border border-purple-200 hover:border-purple-300 hover:shadow-lg hover:-translate-y-1" onClick={() => exportSchedule('image', 'all', 0)}>
+                <div className="p-3 bg-purple-500 rounded-full mb-3 group-hover:bg-purple-600 transition-colors">
+                  <Image className="w-6 h-6 text-white" />
+                </div>
+                <span className="text-sm font-semibold text-gray-800 mb-1">Imagen</span>
+                <span className="text-xs text-gray-600">Profesores</span>
               </div>
             </div>
           </div>
  
           {/* Asignar Horario Manual */}
           <div className="my-6">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-lg font-semibold mb-4 text-gray-800">Asignar Horario Manual</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+              <h2 className="text-xl font-bold mb-6 text-gray-800 flex items-center">
+                <span className="mr-2">✏️</span>
+                Asignar Horario Manual
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Curso</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Curso</label>
                   <select
                     value={selectedCourse}
                     onChange={(e) => setSelectedCourse(Number(e.target.value) || '')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200"
                   >
                     <option value="">Seleccionar Curso</option>
                     {courses.map((course) => (
@@ -374,11 +421,11 @@ export default function SchedulePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Día</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Día</label>
                   <select
                     value={selectedDay}
                     onChange={(e) => setSelectedDay(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200"
                   >
                     <option value="">Seleccionar Día</option>
                     {days.map((day) => (
@@ -389,14 +436,14 @@ export default function SchedulePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Materia</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Materia</label>
                   <select
                     value={selectedSubject}
                     onChange={(e) => {
                       setSelectedSubject(Number(e.target.value) || '');
                       setSelectedTeacher('');
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200"
                   >
                     <option value="">Seleccionar Materia</option>
                     {subjects.map((subject) => (
@@ -407,12 +454,12 @@ export default function SchedulePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Profesor asociado a la materia</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Profesor asociado a la materia</label>
                   <select
                     value={selectedTeacher}
                     onChange={(e) => setSelectedTeacher(Number(e.target.value) || '')}
                     disabled={!selectedSubject}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="">Seleccionar Profesor</option>
                     {filteredTeachers.map((teacher) => (
@@ -423,54 +470,86 @@ export default function SchedulePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Hora Inicio</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Hora Inicio</label>
                   <input
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Hora Fin</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Hora Fin</label>
                   <input
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200"
                   />
                 </div>
               </div>
-              <div className="flex space-x-4">
+              <div className="flex flex-wrap gap-4">
                 <button
                   onClick={clearForm}
-                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+                  className="px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                 >
-                  Vaciar contenido
+                  🗑️ Vaciar contenido
                 </button>
                 <button
                   onClick={addToSchedule}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                 >
-                  Añadir al horario
+                  ➕ Añadir al horario
                 </button>
               </div>
             </div>
- 
+
+            {/* Ver Horario de Curso */}
+            <div className="my-6">
+              <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+                  <span className="mr-2">📅</span>
+                  Ver Horario de Curso
+                </h3>
+                <div className="max-w-md">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Curso</label>
+                  <select
+                    value={selectedCourse || ''}
+                    onChange={(e) => {
+                      const courseId = Number(e.target.value) || '';
+                      setSelectedCourse(courseId);
+                      if (courseId) loadCourseSchedules(courseId);
+                    }}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200"
+                  >
+                    <option value="">Seleccionar Curso</option>
+                    {courses.map((course) => (
+                      <option key={course.courseId} value={course.courseId}>
+                        {course.courseName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
             {/* Mostrar Horario del Curso */}
-            {courseSchedules.length > 0 && (
+            {selectedCourse && (
               <div className="my-6">
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-semibold text-gray-800">Horario del Curso</h2>
+                <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                      <span className="mr-2">📋</span>
+                      Horario del Curso
+                    </h2>
                     <button
                       onClick={() => router.push('/dashboard/schedule/scheduleCourse')}
-                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                      className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center"
                     >
-                      Guardar Horario
+                      💾 Guardar Horario
                     </button>
                   </div>
-                  {renderScheduleTable(courseSchedules)}
+                  {renderScheduleTable(courseSchedules, selectedCourse ? Number(selectedCourse) : undefined)}
                 </div>
               </div>
             )}

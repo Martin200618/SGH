@@ -15,6 +15,36 @@ export default function LoginForm({ onBack, onSubmit }: LoginFormProps) {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (!user.trim()) {
+      alert('El nombre de usuario es obligatorio');
+      return;
+    }
+    if (user.length > 50) {
+      alert('El nombre de usuario no puede exceder los 50 caracteres');
+      return;
+    }
+    if (!/^[a-z]*$/.test(user)) {
+      alert('El nombre de usuario solo puede contener letras minúsculas');
+      return;
+    }
+    if (!password) {
+      alert('La contraseña es obligatoria');
+      return;
+    }
+    if (password.length < 6) {
+      alert('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    if (password.length > 100) {
+      alert('La contraseña no puede exceder los 100 caracteres');
+      return;
+    }
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      alert('La contraseña debe contener al menos una letra minúscula, una mayúscula y un número');
+      return;
+    }
+
     setIsLoading(true);
 
     setTimeout(() => {

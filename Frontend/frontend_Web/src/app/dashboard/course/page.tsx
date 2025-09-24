@@ -10,10 +10,12 @@ import { getAllTeachers, Teacher } from "@/api/services/teacherApi";
 
 export default function CoursePage() {
   const [courses, setCourses] = useState<{ courseId: number; courseName: string; directorName?: string }[]>([]);
+  const [filteredCourses, setFilteredCourses] = useState<{ courseId: number; courseName: string; directorName?: string }[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,6 +39,10 @@ export default function CoursePage() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    handleSearch(''); // Initialize with all courses when data loads
+  }, [courses]);
+
   const handleAddCourse = () => {
     setEditingCourse(null);
     setIsModalOpen(true);
@@ -45,18 +51,21 @@ export default function CoursePage() {
   const handleSaveCourse = async (courseData: Omit<Course, 'courseId'>) => {
     try {
       setErrorMessage('');
+      setSuccessMessage('');
       if (editingCourse) {
         // Editar curso existente
         await updateCourse(editingCourse.courseId, {
           courseName: courseData.courseName,
           gradeDirectorId: courseData.gradeDirectorId,
         });
+        setSuccessMessage('Curso actualizado correctamente');
       } else {
         // Agregar nuevo curso
         await createCourse({
           courseName: courseData.courseName,
           gradeDirectorId: courseData.gradeDirectorId,
         });
+        setSuccessMessage('Curso creado correctamente');
       }
       // Refetch
       const [coursesData, teachersData] = await Promise.all([
@@ -69,10 +78,15 @@ export default function CoursePage() {
         directorName: course.gradeDirectorId ? teachersData.find(t => t.teacherId === course.gradeDirectorId)?.teacherName : undefined,
       }));
       setCourses(mappedCourses);
+      setFilteredCourses(mappedCourses);
+      handleSearch(''); // Initialize search with all records
+      setFilteredCourses(mappedCourses);
+      setFilteredCourses(mappedCourses);
       setIsModalOpen(false);
     } catch (error: any) {
       console.error("Error saving course:", error);
       setErrorMessage(error.message || 'Error al guardar el curso');
+      setSuccessMessage('');
     }
   };
 
@@ -97,7 +111,9 @@ export default function CoursePage() {
     if (window.confirm('¿Estás seguro de que deseas eliminar este curso?')) {
       try {
         setErrorMessage('');
+        setSuccessMessage('');
         await deleteCourse(id);
+        setSuccessMessage('Curso eliminado correctamente');
         // Refetch
         const [coursesData, teachersData] = await Promise.all([
           getAllCourses(),
@@ -112,7 +128,20 @@ export default function CoursePage() {
       } catch (error: any) {
         console.error("Error deleting course:", error);
         setErrorMessage(error.message || 'Error al eliminar el curso');
+        setSuccessMessage('');
       }
+    }
+  };
+
+  const handleSearch = (query: string) => {
+    if (query.trim() === '') {
+      setFilteredCourses(courses);
+    } else {
+      const filtered = courses.filter(course =>
+        course.courseName.toLowerCase().includes(query.toLowerCase()) ||
+        (course.directorName && course.directorName.toLowerCase().includes(query.toLowerCase()))
+      );
+      setFilteredCourses(filtered);
     }
   };
 
@@ -122,16 +151,21 @@ export default function CoursePage() {
       <div className="flex-1 p-6">
         <HeaderCourse onAddCourse={handleAddCourse} />
         <div className="my-6">
-          <SearchBar />
+          <SearchBar placeholder="Buscar cursos por nombre o director..." onSearch={handleSearch} />
         </div>
         {errorMessage && (
           <div className="my-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
             {errorMessage}
           </div>
         )}
+        {successMessage && (
+          <div className="my-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+            {successMessage}
+          </div>
+        )}
         <div className="my-6">
           <TableCourse
-            courses={courses}
+            courses={filteredCourses}
             onEdit={handleEditCourse}
             onDelete={handleDeleteCourse}
           />

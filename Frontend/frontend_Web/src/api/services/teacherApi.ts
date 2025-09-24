@@ -1,4 +1,5 @@
 import { TEACHER_END_POINTS, API_BASE_URL } from "../constants/Endpoint";
+import Cookies from 'js-cookie';
 
 export interface Teacher {
   teacherId: number;
@@ -27,8 +28,8 @@ export interface TeacherAvailabilityDTO {
 }
 
 const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  console.log("Token en localStorage:", token);
+  const token = Cookies.get("token");
+  console.log("Token en cookies:", token);
   return {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -190,6 +191,26 @@ export const updateAvailability = async (availability: TeacherAvailabilityDTO): 
     return data;
   } catch (error: any) {
     console.error("Error al actualizar disponibilidad:", error.message);
+    throw error;
+  }
+};
+
+export const deleteAvailability = async (teacherId: number, day: string): Promise<string> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/availability/delete/${teacherId}/${day}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || `Error ${response.status}`);
+    }
+
+    const data = await response.text();
+    return data;
+  } catch (error: any) {
+    console.error("Error al eliminar disponibilidad:", error.message);
     throw error;
   }
 };

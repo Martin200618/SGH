@@ -17,12 +17,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/courses")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class CourseController {
 
     private final CourseService service;
 
     @PostMapping
-    public ResponseEntity<?> create(@Valid @RequestBody CourseDTO dto, BindingResult bindingResult) {
+    public ResponseEntity<responseDTO> create(@Valid @RequestBody CourseDTO dto, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getFieldErrors().stream()
                     .map(error -> error.getDefaultMessage())
@@ -40,8 +41,8 @@ public class CourseController {
         }
 
         try {
-            CourseDTO result = service.create(dto);
-            return ResponseEntity.ok(result);
+            service.create(dto);
+            return ResponseEntity.ok(new responseDTO("OK", "Curso creado correctamente"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(new responseDTO("ERROR", e.getMessage()));
@@ -59,7 +60,7 @@ public class CourseController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable int id, @Valid @RequestBody CourseDTO dto, BindingResult bindingResult) {
+    public ResponseEntity<responseDTO> update(@PathVariable int id, @Valid @RequestBody CourseDTO dto, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getFieldErrors().stream()
                     .map(error -> error.getDefaultMessage())
@@ -77,8 +78,8 @@ public class CourseController {
         }
 
         try {
-            CourseDTO result = service.update(id, dto);
-            return ResponseEntity.ok(result);
+            service.update(id, dto);
+            return ResponseEntity.ok(new responseDTO("OK", "Curso actualizado correctamente"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(new responseDTO("ERROR", e.getMessage()));

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { FileText, FileSpreadsheet, Image } from "lucide-react";
 import SearchBar from "@/components/dashboard/SearchBar";
 import HeaderSchedule from "@/components/schedule/scheduleCourse/HeaderSchedule";
 import ScheduleModal from "@/components/schedule/scheduleCourse/ScheduleModal";
 import ScheduleGenerateModal from "@/components/schedule/scheduleCourse/ScheduleGenerateModal";
-import { getAllSchedules, Schedule } from "@/api/services/scheduleApi";
+import { getAllSchedules, generateSchedule, Schedule } from "@/api/services/scheduleApi";
 import { getAllCourses, Course } from "@/api/services/courseApi";
 
 const exportSchedule = async (format: 'pdf' | 'excel' | 'image', type: 'course' | 'teacher' | 'all', id?: number) => {
@@ -45,6 +46,9 @@ const generateTimes = (schedules: Schedule[]) => {
   schedules.forEach(schedule => {
     timeSet.add(schedule.startTime);
   });
+  // Always include break times
+  timeSet.add('08:00');
+  timeSet.add('12:00');
   const sortedTimes = Array.from(timeSet).sort();
   const times: string[] = [];
   sortedTimes.forEach(startTime => {
@@ -78,8 +82,31 @@ const renderScheduleTable = (schedules: Schedule[], courseName: string, key: str
 
   return (
     <div key={key} className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-      <div className="p-4 bg-gray-100 border-b border-gray-200">
+      <div className="p-4 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
         <h3 className="text-lg font-semibold text-gray-800">{courseName}</h3>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => exportSchedule('pdf', 'course', parseInt(key))}
+            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Exportar PDF"
+          >
+            <FileText className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => exportSchedule('excel', 'course', parseInt(key))}
+            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+            title="Exportar Excel"
+          >
+            <FileSpreadsheet className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => exportSchedule('image', 'course', parseInt(key))}
+            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            title="Exportar Imagen"
+          >
+            <Image className="w-5 h-5" />
+          </button>
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
@@ -103,18 +130,21 @@ const renderScheduleTable = (schedules: Schedule[], courseName: string, key: str
                 </td>
                 {days.map((day) => {
                   const schedule = getScheduleForTimeAndDay(schedules, time, day);
-                  const isLunch = time.includes("12:00 PM");
-                  const content = isLunch ? "Almuerzo" : schedule ? `${schedule.teacherName || 'Profesor'}/${schedule.subjectName || 'Materia'}` : "";
+                  const isLunchTime = time === "12:00 PM - 1:00 PM";
+                  const isBreak = time === "8:00 AM - 9:00 AM";
+                  const content = schedule ? `${schedule.teacherName || 'Profesor'}/${schedule.subjectName || 'Materia'}` : isLunchTime ? "Almuerzo" : isBreak ? "Descanso" : "";
 
                   return (
                     <td
                       key={day}
                       className={`px-6 py-4 text-center text-sm ${
-                        isLunch
+                        isLunchTime
                           ? 'bg-orange-100 text-orange-800 font-medium'
-                          : content
-                            ? 'text-blue-600 hover:bg-blue-50 cursor-pointer transition-colors'
-                            : 'text-gray-400'
+                          : isBreak
+                            ? 'bg-yellow-100 text-yellow-800 font-medium'
+                            : content && schedule
+                              ? 'bg-blue-100 text-blue-800 font-medium'
+                              : 'text-gray-400'
                       }`}
                     >
                       {content}
@@ -136,6 +166,7 @@ export default function ScheduleCoursePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -175,9 +206,31 @@ export default function ScheduleCoursePage() {
     setIsGenerateModalOpen(true);
   };
 
-  const handleConfirmGenerate = () => {
-    alert('Generar horario - Funcionalidad requiere implementación en backend');
-    setIsGenerateModalOpen(false);
+  const handleConfirmGenerate = async (params: {
+    periodStart: string;
+    periodEnd: string;
+    dryRun: boolean;
+    force: boolean;
+    params?: string;
+  }) => {
+    setIsGenerating(true);
+    try {
+      const result = await generateSchedule(params);
+      alert(`Horario generado exitosamente. ${result.message || ''}`);
+      // Refrescar los datos
+      const [schedulesData, coursesData] = await Promise.all([
+        getAllSchedules(),
+        getAllCourses()
+      ]);
+      setSchedules(schedulesData);
+      setCourses(coursesData);
+    } catch (error: any) {
+      console.error('Error generando horario:', error);
+      alert(`Error al generar horario: ${error.message || 'Error desconocido'}`);
+    } finally {
+      setIsGenerating(false);
+      setIsGenerateModalOpen(false);
+    }
   };
 
   const handleCloseModal = () => {
@@ -213,42 +266,6 @@ export default function ScheduleCoursePage() {
           })}
         </div>
 
-        {/* Reportes */}
-        <div className="my-6">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-lg font-semibold mb-4 text-gray-800">Exportar Horarios de Cursos</h2>
-            {courses.map((course) => {
-              const courseSchedules = schedulesByCourse[course.courseId] || [];
-              if (courseSchedules.length === 0) return null;
-
-              return (
-                <div key={course.courseId} className="mb-4 p-4 border border-gray-200 rounded">
-                  <h3 className="text-md font-medium mb-2">{course.courseName}</h3>
-                  <div className="flex space-x-4">
-                    <button
-                      onClick={() => exportSchedule('pdf', 'course', course.courseId)}
-                      className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                    >
-                      PDF
-                    </button>
-                    <button
-                      onClick={() => exportSchedule('excel', 'course', course.courseId)}
-                      className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                    >
-                      Excel
-                    </button>
-                    <button
-                      onClick={() => exportSchedule('image', 'course', course.courseId)}
-                      className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                    >
-                      Imagen
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       </div>
 
       <ScheduleModal
@@ -262,6 +279,7 @@ export default function ScheduleCoursePage() {
         isOpen={isGenerateModalOpen}
         onClose={handleCloseGenerateModal}
         onGenerate={handleConfirmGenerate}
+        isGenerating={isGenerating}
       />
     </>
   );

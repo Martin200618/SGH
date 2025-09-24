@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Clock, Calendar } from 'lucide-react';
-import { getTeacherAvailability, registerAvailability, updateAvailability, TeacherAvailability, TeacherAvailabilityDTO } from '../../api/services/teacherApi';
+import { getTeacherAvailability, registerAvailability, updateAvailability, deleteAvailability, TeacherAvailability, TeacherAvailabilityDTO } from '../../api/services/teacherApi';
 
 interface AvailabilityModalProps {
   isOpen: boolean;
@@ -19,14 +19,15 @@ const DAYS_OF_WEEK = [
 ];
 
 const AvailabilityModal: React.FC<AvailabilityModalProps> = ({ isOpen, onClose, teacherId, teacherName, onAvailabilityUpdated }) => {
-  const [availabilities, setAvailabilities] = useState<TeacherAvailability[]>([]);
-  const [selectedDay, setSelectedDay] = useState<string>('Lunes');
-  const [amStart, setAmStart] = useState<string>('');
-  const [amEnd, setAmEnd] = useState<string>('');
-  const [pmStart, setPmStart] = useState<string>('');
-  const [pmEnd, setPmEnd] = useState<string>('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+   const [availabilities, setAvailabilities] = useState<TeacherAvailability[]>([]);
+   const [selectedDay, setSelectedDay] = useState<string>('Lunes');
+   const [amStart, setAmStart] = useState<string>('');
+   const [amEnd, setAmEnd] = useState<string>('');
+   const [pmStart, setPmStart] = useState<string>('');
+   const [pmEnd, setPmEnd] = useState<string>('');
+   const [loading, setLoading] = useState(false);
+   const [error, setError] = useState('');
+   const [timeErrors, setTimeErrors] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     if (isOpen && teacherId) {
@@ -52,7 +53,56 @@ const AvailabilityModal: React.FC<AvailabilityModalProps> = ({ isOpen, onClose, 
     return availabilities.find(a => a.day === selectedDay);
   };
 
+  const validateTime = (time: string, isMorning: boolean): { isValid: boolean; error?: string } => {
+    if (!time) return { isValid: true }; // Empty is valid
+    const [hours] = time.split(':').map(Number);
+    if (isMorning) {
+      // Morning: allow 12:00 (which will be PM) or times before 12:00
+      if (hours > 12) {
+        return { isValid: false, error: 'Los horarios de mañana deben ser antes del mediodía' };
+      }
+      return { isValid: true };
+    } else {
+      // Afternoon: only times after 12:00
+      if (hours < 12) {
+        return { isValid: false, error: 'Los horarios de tarde deben ser después del mediodía' };
+      }
+      return { isValid: true };
+    }
+  };
+
+  const validateTimeOrder = (startTime: string, endTime: string): { isValid: boolean; error?: string } => {
+    if (!startTime || !endTime) return { isValid: true };
+    const startMinutes = timeToMinutes(startTime);
+    const endMinutes = timeToMinutes(endTime);
+    if (startMinutes >= endMinutes) {
+      return { isValid: false, error: 'La hora de fin debe ser posterior a la hora de inicio' };
+    }
+    return { isValid: true };
+  };
+
+  const timeToMinutes = (time: string): number => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const getTimePeriod = (time: string): string => {
+    if (!time) return '';
+    const [hours] = time.split(':').map(Number);
+    if (hours === 0) return 'AM'; // 12:00 AM
+    if (hours < 12) return 'AM';
+    if (hours === 12) return 'PM'; // 12:00 PM
+    return 'PM';
+  };
+
   const handleSave = async () => {
+    // Check for any time validation errors
+    const hasTimeErrors = Object.values(timeErrors).some(error => error !== '');
+    if (hasTimeErrors) {
+      setError('Por favor corrija los errores en los horarios antes de guardar');
+      return;
+    }
+
     if (!amStart && !amEnd && !pmStart && !pmEnd) {
       setError('Debe proporcionar al menos un horario válido');
       return;
@@ -109,8 +159,81 @@ const AvailabilityModal: React.FC<AvailabilityModalProps> = ({ isOpen, onClose, 
     }
   };
 
+  const handleClearDay = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      await deleteAvailability(teacherId, selectedDay);
+
+      // Recargar disponibilidad para obtener los días actualizados
+      const updatedAvailability = await getTeacherAvailability(teacherId);
+      const availabilityDays = updatedAvailability.length > 0
+        ? updatedAvailability.map(a => a.day).join(', ')
+        : 'No configurada';
+
+      // Notificar al componente padre sobre la actualización
+      if (onAvailabilityUpdated) {
+        onAvailabilityUpdated(teacherId, availabilityDays);
+      }
+
+      await loadAvailability(); // Recargar datos para el modal
+      setAmStart('');
+      setAmEnd('');
+      setPmStart('');
+      setPmEnd('');
+      setError('');
+    } catch (error: any) {
+      console.error('Error clearing availability:', error);
+      setError(error.message || 'Error al limpiar disponibilidad');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const validateAndSetTime = (field: string, value: string, isMorning: boolean) => {
+    const validation = validateTime(value, isMorning);
+    setTimeErrors(prev => ({
+      ...prev,
+      [field]: validation.error || ''
+    }));
+
+    // Update the field
+    switch (field) {
+      case 'amStart': setAmStart(value); break;
+      case 'amEnd': setAmEnd(value); break;
+      case 'pmStart': setPmStart(value); break;
+      case 'pmEnd': setPmEnd(value); break;
+    }
+
+    // Validate time order if both start and end are set
+    if (field === 'amStart' || field === 'amEnd') {
+      const start = field === 'amStart' ? value : amStart;
+      const end = field === 'amEnd' ? value : amEnd;
+      if (start && end) {
+        const orderValidation = validateTimeOrder(start, end);
+        setTimeErrors(prev => ({
+          ...prev,
+          amOrder: orderValidation.error || ''
+        }));
+      }
+    }
+
+    if (field === 'pmStart' || field === 'pmEnd') {
+      const start = field === 'pmStart' ? value : pmStart;
+      const end = field === 'pmEnd' ? value : pmEnd;
+      if (start && end) {
+        const orderValidation = validateTimeOrder(start, end);
+        setTimeErrors(prev => ({
+          ...prev,
+          pmOrder: orderValidation.error || ''
+        }));
+      }
+    }
+  };
+
   const handleDayChange = (day: string) => {
     setSelectedDay(day);
+    setTimeErrors({}); // Clear errors when changing day
     const dayAvailability = availabilities.find(a => a.day === day);
     if (dayAvailability) {
       setAmStart(dayAvailability.amStart || '');
@@ -181,65 +304,121 @@ const AvailabilityModal: React.FC<AvailabilityModalProps> = ({ isOpen, onClose, 
           {/* Time Inputs */}
           <div className="space-y-6">
             {/* Morning Schedule */}
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
+              <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
                 <Clock className="w-5 h-5 mr-2" />
-                Horario de Mañana
+                Horario de Mañana (AM)
               </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Inicio
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Hora de Inicio
                   </label>
-                  <input
-                    type="time"
-                    value={amStart}
-                    onChange={(e) => setAmStart(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <div className="relative">
+                    <input
+                      type="time"
+                      value={amStart}
+                      onChange={(e) => validateAndSetTime('amStart', e.target.value, true)}
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 bg-white shadow-sm ${
+                        timeErrors.amStart
+                          ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                          : 'border-blue-200 focus:ring-blue-500 focus:border-blue-500'
+                      }`}
+                    />
+                    {amStart && !timeErrors.amStart && (
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                        {getTimePeriod(amStart)}
+                      </span>
+                    )}
+                  </div>
+                  {timeErrors.amStart && (
+                    <p className="text-sm text-red-600 mt-1">{timeErrors.amStart}</p>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Fin
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Hora de Fin
                   </label>
-                  <input
-                    type="time"
-                    value={amEnd}
-                    onChange={(e) => setAmEnd(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <div className="relative">
+                    <input
+                      type="time"
+                      value={amEnd}
+                      onChange={(e) => validateAndSetTime('amEnd', e.target.value, true)}
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 bg-white shadow-sm ${
+                        timeErrors.amEnd || timeErrors.amOrder
+                          ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                          : 'border-blue-200 focus:ring-blue-500 focus:border-blue-500'
+                      }`}
+                    />
+                    {amEnd && !timeErrors.amEnd && (
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                        {getTimePeriod(amEnd)}
+                      </span>
+                    )}
+                  </div>
+                  {(timeErrors.amEnd || timeErrors.amOrder) && (
+                    <p className="text-sm text-red-600 mt-1">{timeErrors.amEnd || timeErrors.amOrder}</p>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Afternoon Schedule */}
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold text-green-900 mb-3 flex items-center">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
+              <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
                 <Clock className="w-5 h-5 mr-2" />
-                Horario de Tarde
+                Horario de Tarde (PM)
               </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Inicio
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Hora de Inicio
                   </label>
-                  <input
-                    type="time"
-                    value={pmStart}
-                    onChange={(e) => setPmStart(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
+                  <div className="relative">
+                    <input
+                      type="time"
+                      value={pmStart}
+                      onChange={(e) => validateAndSetTime('pmStart', e.target.value, false)}
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 bg-white shadow-sm ${
+                        timeErrors.pmStart
+                          ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                          : 'border-green-200 focus:ring-green-500 focus:border-green-500'
+                      }`}
+                    />
+                    {pmStart && !timeErrors.pmStart && (
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm font-medium text-green-600 bg-green-100 px-2 py-1 rounded">
+                        {getTimePeriod(pmStart)}
+                      </span>
+                    )}
+                  </div>
+                  {timeErrors.pmStart && (
+                    <p className="text-sm text-red-600 mt-1">{timeErrors.pmStart}</p>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Fin
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Hora de Fin
                   </label>
-                  <input
-                    type="time"
-                    value={pmEnd}
-                    onChange={(e) => setPmEnd(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
+                  <div className="relative">
+                    <input
+                      type="time"
+                      value={pmEnd}
+                      onChange={(e) => validateAndSetTime('pmEnd', e.target.value, false)}
+                      className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 bg-white shadow-sm ${
+                        timeErrors.pmEnd || timeErrors.pmOrder
+                          ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                          : 'border-green-200 focus:ring-green-500 focus:border-green-500'
+                      }`}
+                    />
+                    {pmEnd && !timeErrors.pmEnd && (
+                      <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm font-medium text-green-600 bg-green-100 px-2 py-1 rounded">
+                        {getTimePeriod(pmEnd)}
+                      </span>
+                    )}
+                  </div>
+                  {(timeErrors.pmEnd || timeErrors.pmOrder) && (
+                    <p className="text-sm text-red-600 mt-1">{timeErrors.pmEnd || timeErrors.pmOrder}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -270,20 +449,29 @@ const AvailabilityModal: React.FC<AvailabilityModalProps> = ({ isOpen, onClose, 
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+        <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
           <button
-            onClick={onClose}
-            className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-          >
-            Cerrar
-          </button>
-          <button
-            onClick={handleSave}
+            onClick={handleClearDay}
             disabled={loading}
-            className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
+            className="px-6 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-medium disabled:opacity-50"
           >
-            {loading ? 'Guardando...' : 'Guardar Disponibilidad'}
+            {loading ? 'Limpiando...' : 'Limpiar Día'}
           </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={onClose}
+              className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+            >
+              Cerrar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={loading}
+              className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
+            >
+              {loading ? 'Guardando...' : 'Guardar Disponibilidad'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

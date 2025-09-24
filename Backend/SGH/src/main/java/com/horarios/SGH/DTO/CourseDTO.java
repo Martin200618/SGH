@@ -10,8 +10,8 @@ public class CourseDTO {
 
     @NotNull(message = "El nombre del curso no puede ser nulo")
     @NotBlank(message = "El nombre del curso no puede estar vacío")
-    @Size(min = 1, max = 2, message = "El nombre del curso debe tener entre 1 y 2 caracteres")
-    @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "El nombre del curso solo puede contener letras y números")
+    @Size(min = 1, max = 50, message = "El nombre del curso debe tener entre 1 y 50 caracteres")
+    @Pattern(regexp = "^[a-zA-ZÀ-ÿ0-9\\s]+$", message = "El nombre del curso solo puede contener letras, números y espacios")
     private String courseName;
 
     // Director de grado opcional

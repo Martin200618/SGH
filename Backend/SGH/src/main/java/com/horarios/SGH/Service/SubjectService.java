@@ -3,6 +3,7 @@ package com.horarios.SGH.Service;
 import com.horarios.SGH.DTO.SubjectDTO;
 import com.horarios.SGH.Model.subjects;
 import com.horarios.SGH.Repository.Isubjects;
+import com.horarios.SGH.Repository.IScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
 public class SubjectService implements ISubjectService {
 
     private final Isubjects repo;
+    private final IScheduleRepository scheduleRepo;
 
     public SubjectDTO create(SubjectDTO dto) {
         subjects entity = new subjects();
@@ -51,6 +53,10 @@ public class SubjectService implements ISubjectService {
     }
 
     public void delete(int id) {
+        // Verificar si la materia está siendo utilizada en horarios
+        if (scheduleRepo.existsBySubjectId_Id(id)) {
+            throw new RuntimeException("No se puede eliminar la materia porque está siendo utilizada en horarios");
+        }
         repo.deleteById(id);
     }
 }

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import LoginForm from "@/components/login/LoginForm";
 import { login } from "@/api/services/userApi";
 import { Link } from "lucide-react";
+import Cookies from 'js-cookie';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function LoginPage() {
       const data = await login(user, password);
 
       if (data.token) {
-        localStorage.setItem("token", data.token);
+        Cookies.set("token", data.token, { expires: 1 }); // Expira en 1 día
         router.push("/dashboard");
       } else {
         setErrorMessage("No se recibió token. Verifica tus credenciales.");

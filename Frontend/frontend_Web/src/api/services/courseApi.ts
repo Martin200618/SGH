@@ -1,4 +1,5 @@
 import { COURSE_END_POINTS } from "../constants/Endpoint";
+import Cookies from 'js-cookie';
 
 export interface Course {
   courseId: number;
@@ -26,8 +27,8 @@ export interface UpdateCourseRequest {
 }
 
 const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  console.log("Token en localStorage:", token);
+  const token = Cookies.get("token");
+  console.log("Token en cookies:", token);
   return {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

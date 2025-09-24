@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface IScheduleRepository extends JpaRepository<schedule, Integer> {
     List<schedule> findByScheduleName(String scheduleName);
+    boolean existsBySubjectId_Id(Integer subjectId);
 
     @Query("SELECT s FROM schedule s " +
            "LEFT JOIN FETCH s.teacherId t " +

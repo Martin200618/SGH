@@ -12,9 +12,11 @@ import com.horarios.SGH.Repository.TeacherSubjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +27,12 @@ public class CourseService implements ICourseService {
     private final Iteachers teacherRepo;
     private final Isubjects subjectRepo;
     private final TeacherSubjectRepository teacherSubjectRepo;
+
+    private static Comparator<CourseDTO> naturalOrderComparator() {
+        return Comparator.comparing(dto -> Pattern.compile("(\\d+)").splitAsStream(dto.getCourseName())
+                .map(part -> part.matches("\\d+") ? String.format("%010d", Integer.parseInt(part)) : part)
+                .collect(Collectors.joining()));
+    }
 
     public CourseDTO create(CourseDTO dto) {
         courses entity = new courses();
@@ -48,7 +56,7 @@ public class CourseService implements ICourseService {
             dto.setCourseName(c.getCourseName());
             dto.setGradeDirectorId(c.getGradeDirector() != null ? c.getGradeDirector().getId() : null);
             return dto;
-        }).collect(Collectors.toList());
+        }).sorted(naturalOrderComparator()).collect(Collectors.toList());
     }
 
     public CourseDTO getById(int id) {

@@ -1,7 +1,9 @@
 const API_URL = "http://localhost:8085/auth"; // 👈 mismo que en tu controlador
 
+import Cookies from 'js-cookie';
+
 const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
+  const token = Cookies.get("token");
   return {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

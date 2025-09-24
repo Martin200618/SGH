@@ -14,6 +14,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import Cookies from 'js-cookie';
 
 export default function Sidebar() {
   const [showModal, setShowModal] = useState(false);
@@ -24,15 +25,29 @@ export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsLoggingOut(true);
-    // Remove the authentication token
-    localStorage.removeItem("token");
-    setTimeout(() => {
+    try {
+      // Call backend logout endpoint
+      const response = await fetch("http://localhost:8085/auth/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Cookies.get("token")}`,
+        },
+      });
+      if (!response.ok) {
+        console.error("Error calling logout endpoint");
+      }
+    } catch (error) {
+      console.error("Error during logout:", error);
+    } finally {
+      // Remove the authentication token
+      Cookies.remove("token");
       setIsLoggingOut(false);
       setShowModal(false);
       router.push("/login");
-    }, 1500);
+    }
   };
 
   const handleNavigation = (path: string, label: string) => {

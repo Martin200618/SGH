@@ -17,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/subjects")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class SubjectController {
 
     private final SubjectService service;
@@ -130,6 +131,9 @@ public class SubjectController {
         try {
             service.delete(id);
             return ResponseEntity.ok(new responseDTO("OK", "Materia eliminada correctamente"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(new responseDTO("ERROR", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new responseDTO("ERROR", "Materia no encontrada"));

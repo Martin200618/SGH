@@ -59,7 +59,7 @@ public class SecurityConfig {
                     "/schedules/**",     // horarios para dashboard
                     "/schedules-crud/by-course/**",  // ver horarios de curso
                     "/schedules-crud/by-teacher/**", // ver horarios de profesor
-                    "/schedules-crud",   // ver todos los horarios
+                    "/schedules-crud",   // ver todos los horarios (GET)
                     "/schedules/history", // historial de horarios
                     "/availability/**",  // disponibilidad de profesores
                     "/swagger-ui/**",
@@ -67,6 +67,9 @@ public class SecurityConfig {
                     "/v3/api-docs/**",
                     "/api-docs/**"
                 ).permitAll()
+                // Endpoints que requieren autenticación para operaciones de escritura
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/schedules-crud/**").authenticated()
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/schedules-crud/**").authenticated()
                 // Solo subjects y courses requieren autenticación para operaciones de escritura
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/subjects/**").authenticated()
                 .requestMatchers(org.springframework.http.HttpMethod.PUT, "/subjects/**").authenticated()

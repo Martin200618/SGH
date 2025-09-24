@@ -129,6 +129,33 @@ public class TeacherAvailabilityController {
         return availabilityRepo.findByTeacher_Id(id);
     }
 
+    @DeleteMapping("/delete/{teacherId}/{day}")
+    @Operation(
+        summary = "Eliminar disponibilidad de profesor",
+        description = "Elimina la disponibilidad horaria de un profesor para un día específico"
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "Disponibilidad eliminada correctamente",
+        content = @Content(mediaType = "text/plain")
+    )
+    public String deleteAvailability(@PathVariable Integer teacherId, @PathVariable String day) {
+        // Validar que el profesor existe
+        teachers teacher = teacherRepo.findById(teacherId)
+                .orElseThrow(() -> new RuntimeException("Profesor no encontrado con ID: " + teacherId));
+
+        // Buscar disponibilidad existente
+        Days dayEnum = Days.valueOf(day);
+        List<TeacherAvailability> existing = availabilityRepo.findByTeacher_IdAndDay(teacherId, dayEnum);
+        if (existing.isEmpty()) {
+            throw new RuntimeException("No existe disponibilidad registrada para este profesor en el día " + day);
+        }
+
+        // Eliminar la disponibilidad
+        availabilityRepo.delete(existing.get(0));
+        return "Disponibilidad eliminada correctamente para " + teacher.getTeacherName() + " el día " + day;
+    }
+
     @GetMapping("/available")
     public List<teachers> getAvailableTeachers(
             @RequestParam String day,

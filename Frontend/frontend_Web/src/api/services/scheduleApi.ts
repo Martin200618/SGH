@@ -1,4 +1,5 @@
 import { SCHEDULE_CRUD_END_POINTS, API_BASE_URL } from "../constants/Endpoint";
+import Cookies from 'js-cookie';
 
 export interface Schedule {
   id: number;
@@ -14,7 +15,7 @@ export interface Schedule {
 }
 
 const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
+  const token = Cookies.get("token");
   return {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),

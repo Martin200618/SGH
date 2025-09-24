@@ -34,13 +34,28 @@ const CourseModal: React.FC<CourseModalProps> = ({ isOpen, onClose, onSave, cour
   }, [course, isOpen]);
 
   const handleSave = () => {
-    if (courseName.trim()) {
-      onSave({
-        courseName: courseName.trim(),
-        gradeDirectorId: gradeDirectorId || undefined,
-      });
-      onClose();
+    const trimmedName = courseName.trim();
+    if (!trimmedName) {
+      alert('El nombre del curso es obligatorio');
+      return;
     }
+    if (trimmedName.length < 1) {
+      alert('El nombre del curso debe tener al menos 1 caracter');
+      return;
+    }
+    if (trimmedName.length > 50) {
+      alert('El nombre del curso debe tener máximo 50 caracteres');
+      return;
+    }
+    if (!/^[a-zA-ZÀ-ÿ0-9\s]+$/.test(trimmedName)) {
+      alert('El nombre del curso solo puede contener letras, números y espacios');
+      return;
+    }
+    onSave({
+      courseName: trimmedName,
+      gradeDirectorId: gradeDirectorId || undefined,
+    });
+    onClose();
   };
 
   if (!isOpen) return null;

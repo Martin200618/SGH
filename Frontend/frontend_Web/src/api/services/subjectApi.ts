@@ -1,4 +1,5 @@
 import { SUBJECT_END_POINTS } from "../constants/Endpoint";
+import Cookies from 'js-cookie';
 
 export interface Subject {
   subjectId: number;
@@ -15,7 +16,7 @@ export interface UpdateSubjectRequest {
 }
 
 const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
+  const token = Cookies.get("token");
   return {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -95,7 +96,7 @@ export const deleteSubject = async (id: number): Promise<void> => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw new Error(`Error ${response.status}`);
+      throw new Error(errorData?.message || `Error ${response.status}`);
     }
   } catch (error: any) {
     console.error("Error al eliminar materia:", error.message);

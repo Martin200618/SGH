@@ -16,17 +16,23 @@ interface TeacherWithSubject extends Teacher {
 
 export default function ProfessorPage() {
   const [teachers, setTeachers] = useState<TeacherWithSubject[]>([]);
+  const [filteredTeachers, setFilteredTeachers] = useState<TeacherWithSubject[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false);
   const [selectedTeacherForAvailability, setSelectedTeacherForAvailability] = useState<{id: number, name: string} | null>(null);
   const [editingTeacher, setEditingTeacher] = useState<TeacherWithSubject | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    handleSearch(''); // Initialize with all professors when data loads
+  }, [teachers]);
 
   const fetchData = async () => {
     try {
@@ -62,6 +68,7 @@ export default function ProfessorPage() {
       );
 
       setTeachers(teachersWithAvailability);
+      setFilteredTeachers(teachersWithAvailability);
       setSubjects(subjectsData);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -79,24 +86,28 @@ export default function ProfessorPage() {
   const handleSaveTeacher = async (teacherData: Omit<Teacher, 'teacherId'>) => {
     try {
       setErrorMessage('');
+      setSuccessMessage('');
       if (editingTeacher) {
         // Editar profesor existente
         await updateTeacher(editingTeacher.teacherId, {
           teacherName: teacherData.teacherName,
           subjectId: teacherData.subjectId
         });
+        setSuccessMessage('Profesor actualizado correctamente');
       } else {
         // Agregar nuevo profesor
         await createTeacher({
           teacherName: teacherData.teacherName,
           subjectId: teacherData.subjectId
         });
+        setSuccessMessage('Profesor creado correctamente');
       }
       await fetchData(); // Refetch data including availability
       setIsModalOpen(false);
     } catch (error: any) {
       console.error("Error saving teacher:", error);
       setErrorMessage(error.message || 'Error al guardar el profesor');
+      setSuccessMessage('');
       throw error; // Re-throw to let modal handle it
     }
   };
@@ -135,11 +146,26 @@ export default function ProfessorPage() {
   const handleDeleteTeacher = async (id: number) => {
     try {
       setErrorMessage('');
+      setSuccessMessage('');
       await deleteTeacher(id);
+      setSuccessMessage('Profesor eliminado correctamente');
       await fetchData(); // Refetch data including availability
     } catch (error: any) {
       console.error("Error deleting teacher:", error);
       setErrorMessage(error.message || 'Error al eliminar el profesor');
+      setSuccessMessage('');
+    }
+  };
+
+  const handleSearch = (query: string) => {
+    if (query.trim() === '') {
+      setFilteredTeachers(teachers);
+    } else {
+      const filtered = teachers.filter(teacher =>
+        teacher.teacherName.toLowerCase().includes(query.toLowerCase()) ||
+        (teacher.subjectName && teacher.subjectName.toLowerCase().includes(query.toLowerCase()))
+      );
+      setFilteredTeachers(filtered);
     }
   };
 
@@ -149,11 +175,16 @@ export default function ProfessorPage() {
       <div className="flex-1 p-6">
         <HeaderProfessor onAddProfessor={handleAddProfessor} />
         <div className="my-6">
-          <SearchBar />
+          <SearchBar placeholder="Buscar profesores por nombre o materia..." onSearch={handleSearch} />
         </div>
         {errorMessage && (
           <div className="my-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
             {errorMessage}
+          </div>
+        )}
+        {successMessage && (
+          <div className="my-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+            {successMessage}
           </div>
         )}
         {loading ? (
@@ -163,7 +194,7 @@ export default function ProfessorPage() {
         ) : (
           <div className="my-6">
             <ProfessorTable
-              teachers={teachers}
+              teachers={filteredTeachers}
               onEdit={handleEditTeacher}
               onDelete={handleDeleteTeacher}
               onManageAvailability={handleOpenAvailabilityModal}

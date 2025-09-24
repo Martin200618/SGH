@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.horarios.SGH.Model.Days;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 @Schema(description = "DTO para la disponibilidad de un profesor")
 public class TeacherAvailabilityDTO {
@@ -15,6 +16,7 @@ public class TeacherAvailabilityDTO {
     private Integer teacherId;
 
     @NotNull(message = "El día es obligatorio")
+    @Pattern(regexp = "^(LUNES|MARTES|MIÉRCOLES|JUEVES|VIERNES|SÁBADO|DOMINGO)$", message = "El día debe ser un día válido de la semana en mayúsculas")
     @Schema(description = "Día de la semana", example = "Lunes")
     private Days day;
 

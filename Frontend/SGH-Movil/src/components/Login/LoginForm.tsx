@@ -4,13 +4,9 @@ import { styles } from '../../styles/loginStyles';
 import { useAuth } from '../../context/AuthContext';
 import CustomAlert from './CustomAlert';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { type NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PasswordInput } from './PasswordInput';
-
-type RootStackParamList = {
-  Login: undefined;
-  Schedules: undefined;
-};
+import { RootStackParamList } from '../../navigation/types';
 
 export default function LoginForm() {
   const { login } = useAuth();

@@ -3,6 +3,10 @@ package com.horarios.SGH.DTO;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
@@ -12,24 +16,35 @@ public class ScheduleDTO {
     @Schema(description = "ID único del horario", example = "1")
     private Integer id;
 
+    @NotNull(message = "El ID del curso es obligatorio")
     @Schema(description = "ID del curso al que pertenece el horario", example = "1", required = true)
     private Integer courseId;
 
+    @NotNull(message = "El ID del profesor es obligatorio")
     @Schema(description = "ID del profesor (obligatorio)", example = "5", required = true)
     private Integer teacherId;
 
+    @NotNull(message = "El ID de la materia es obligatorio")
     @Schema(description = "ID de la materia (obligatorio)", example = "3", required = true)
     private Integer subjectId;
 
+    @NotBlank(message = "El día de la semana es obligatorio")
+    @Pattern(regexp = "^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo)$", message = "El día debe ser un día válido de la semana")
     @Schema(description = "Día de la semana", allowableValues = {"Lunes", "Martes", "Miércoles", "Jueves", "Viernes"}, example = "Lunes", required = true)
     private String day;
 
+    @NotBlank(message = "La hora de inicio es obligatoria")
+    @Pattern(regexp = "^([01]?[0-9]|2[0-3]):[0-5][0-9]$", message = "La hora de inicio debe tener formato HH:mm válido")
     @Schema(description = "Hora de inicio del horario (formato HH:mm)", example = "08:00", required = true)
     private String startTime;
 
+    @NotBlank(message = "La hora de fin es obligatoria")
+    @Pattern(regexp = "^([01]?[0-9]|2[0-3]):[0-5][0-9]$", message = "La hora de fin debe tener formato HH:mm válido")
     @Schema(description = "Hora de fin del horario (formato HH:mm)", example = "09:00", required = true)
     private String endTime;
 
+    @NotBlank(message = "El nombre del horario es obligatorio")
+    @Size(min = 3, max = 100, message = "El nombre del horario debe tener entre 3 y 100 caracteres")
     @Schema(description = "Nombre descriptivo del horario", example = "Matemáticas - Juan Pérez", required = true)
     private String scheduleName;
 
