@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 public class TeacherDTO {
 
     @NotBlank(message = "El nombre del profesor no puede estar vacío")
-    @Size(min = 2, max = 100, message = "El nombre del profesor debe tener entre 2 y 100 caracteres")
+    @Size(min = 5, max = 50, message = "El nombre del profesor debe tener entre 5 y 50 caracteres")
     @Pattern(regexp = "^[a-zA-ZÀ-ÿ\\s]+$", message = "El nombre del profesor solo puede contener letras y espacios")
     private String teacherName;
 

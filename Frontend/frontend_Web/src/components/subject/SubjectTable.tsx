@@ -21,9 +21,7 @@ const SubjectTable = ({ subjects, onEdit, onDelete }: SubjectTableProps) => {
   };
 
   const handleDelete = (id: number) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar esta materia?')) {
-      onDelete(id);
-    }
+    onDelete(id);
   };
 
   return (

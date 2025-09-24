@@ -7,6 +7,7 @@ import com.horarios.SGH.Service.SubjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -57,6 +58,9 @@ public class SubjectController {
             service.create(dto);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new responseDTO("OK", "Materia creada correctamente"));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest()
+                    .body(new responseDTO("ERROR", "Materia ya existente"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(new responseDTO("ERROR", e.getMessage()));
@@ -119,6 +123,9 @@ public class SubjectController {
         try {
             service.update(id, dto);
             return ResponseEntity.ok(new responseDTO("OK", "Materia actualizada correctamente"));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest()
+                    .body(new responseDTO("ERROR", "No pudes colocar el nombre de una materia ya existente"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(new responseDTO("ERROR", e.getMessage()));

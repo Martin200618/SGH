@@ -26,6 +26,8 @@ export default function ProfessorPage() {
   const [editingTeacher, setEditingTeacher] = useState<TeacherWithSubject | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [teacherToDelete, setTeacherToDelete] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -154,18 +156,27 @@ export default function ProfessorPage() {
     setIsModalOpen(true);
   };
 
-  const handleDeleteTeacher = async (id: number) => {
-    try {
-      setErrorMessage('');
-      setSuccessMessage('');
-      await deleteTeacher(id);
-      setSuccessMessage('Profesor eliminado correctamente');
-      await fetchData(); // Refetch data including availability
-    } catch (error: any) {
-      console.error("Error deleting teacher:", error);
-      setErrorMessage(error.message || 'Error al eliminar el profesor');
-      setSuccessMessage('');
+  const handleDeleteTeacher = (id: number) => {
+    setTeacherToDelete(id);
+    setIsConfirmModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (teacherToDelete) {
+      try {
+        setErrorMessage('');
+        setSuccessMessage('');
+        await deleteTeacher(teacherToDelete);
+        setSuccessMessage('Profesor eliminado correctamente');
+        await fetchData(); // Refetch data including availability
+      } catch (error: any) {
+        console.error("Error deleting teacher:", error);
+        setErrorMessage(error.message || 'Error al eliminar el profesor');
+        setSuccessMessage('');
+      }
     }
+    setIsConfirmModalOpen(false);
+    setTeacherToDelete(null);
   };
 
   const handleSearch = (query: string) => {
@@ -229,6 +240,31 @@ export default function ProfessorPage() {
           teacherName={selectedTeacherForAvailability.name}
           onAvailabilityUpdated={handleAvailabilityUpdated}
         />
+      )}
+
+      {isConfirmModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">Confirmar eliminación</h2>
+            <p className="mb-6">
+              ¿Estás seguro de que deseas eliminar el profesor "{teachers.find(t => t.teacherId === teacherToDelete)?.teacherName}"? Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setIsConfirmModalOpen(false)}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

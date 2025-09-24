@@ -17,6 +17,8 @@ export default function SubjectPage() {
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [subjectToDelete, setSubjectToDelete] = useState<number | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -103,17 +105,22 @@ export default function SubjectPage() {
     }
   };
 
-  const handleDeleteSubject = async (id: number) => {
+  const handleDeleteSubject = (id: number) => {
     const subject = subjects.find(s => s.subjectId === id);
     if (subject && (subject.profesoresAsociados || 0) > 0) {
       setErrorMessage('No se puede eliminar una materia que tiene profesores asociados');
       return;
     }
-    if (window.confirm('¿Estás seguro de que deseas eliminar esta materia?')) {
+    setSubjectToDelete(id);
+    setIsConfirmModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (subjectToDelete) {
       try {
         setErrorMessage('');
         setSuccessMessage('');
-        await deleteSubject(id);
+        await deleteSubject(subjectToDelete);
         setSuccessMessage('Materia eliminada correctamente');
         // Refetch y recalcular
         const [subjectsData, teachersData] = await Promise.all([
@@ -131,6 +138,8 @@ export default function SubjectPage() {
         setSuccessMessage('');
       }
     }
+    setIsConfirmModalOpen(false);
+    setSubjectToDelete(null);
   };
 
   const handleSearch = (query: string) => {
@@ -178,6 +187,31 @@ export default function SubjectPage() {
         onSave={handleSaveSubject}
         subject={editingSubject}
       />
+
+      {isConfirmModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">Confirmar eliminación</h2>
+            <p className="mb-6">
+              ¿Estás seguro de que deseas eliminar la materia "{subjects.find(s => s.subjectId === subjectToDelete)?.subjectName}"? Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setIsConfirmModalOpen(false)}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

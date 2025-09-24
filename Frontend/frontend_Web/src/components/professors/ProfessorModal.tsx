@@ -51,12 +51,12 @@ const ProfessorModal: React.FC<ProfessorModalProps> = ({ isOpen, onClose, onSave
       setError('El nombre completo del profesor es requerido');
       return;
     }
-    if (trimmedName.length < 2) {
-      setError('El nombre completo debe tener al menos 2 caracteres');
+    if (trimmedName.length < 5) {
+      setError('El nombre completo debe tener al menos 5 caracteres');
       return;
     }
-    if (trimmedName.length > 100) {
-      setError('El nombre completo debe tener máximo 100 caracteres');
+    if (trimmedName.length > 50) {
+      setError('El nombre completo debe tener máximo 50 caracteres');
       return;
     }
     if (!/^[a-zA-ZÀ-ÿ\s]+$/.test(trimmedName)) {

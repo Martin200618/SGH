@@ -24,9 +24,7 @@ const ProfessorTable = ({ teachers, onEdit, onDelete, onManageAvailability }: Pr
   };
 
   const handleDelete = (id: number) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este profesor?')) {
-      onDelete(id);
-    }
+    onDelete(id);
   };
 
   return (

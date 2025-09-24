@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8085/auth"; // 👈 mismo que en tu controlador
+const API_URL = "http://localhost:8085/auth";
 
 import Cookies from 'js-cookie';
 
@@ -18,7 +18,7 @@ export const login = async (username: string, password: string) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        username, // 👈 debe llamarse igual que en LoginRequestDTO
+        username,
         password,
       }),
     });

@@ -43,6 +43,9 @@ public class CourseController {
         try {
             service.create(dto);
             return ResponseEntity.ok(new responseDTO("OK", "Curso creado correctamente"));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest()
+                    .body(new responseDTO("ERROR", "Curso ya existente"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(new responseDTO("ERROR", e.getMessage()));
@@ -80,6 +83,9 @@ public class CourseController {
         try {
             service.update(id, dto);
             return ResponseEntity.ok(new responseDTO("OK", "Curso actualizado correctamente"));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest()
+                    .body(new responseDTO("ERROR", "no puedes colocar el nombre de un curso ya existente"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(new responseDTO("ERROR", e.getMessage()));

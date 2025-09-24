@@ -18,6 +18,8 @@ export default function CoursePage() {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState<number | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -118,12 +120,17 @@ export default function CoursePage() {
     }
   };
 
-  const handleDeleteCourse = async (id: number) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este curso?')) {
+  const handleDeleteCourse = (id: number) => {
+    setCourseToDelete(id);
+    setIsConfirmModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (courseToDelete) {
       try {
         setErrorMessage('');
         setSuccessMessage('');
-        await deleteCourse(id);
+        await deleteCourse(courseToDelete);
         setSuccessMessage('Curso eliminado correctamente');
         // Refetch
         const [coursesData, teachersData] = await Promise.all([
@@ -142,6 +149,8 @@ export default function CoursePage() {
         setSuccessMessage('');
       }
     }
+    setIsConfirmModalOpen(false);
+    setCourseToDelete(null);
   };
 
   const handleSearch = (query: string) => {
@@ -190,6 +199,31 @@ export default function CoursePage() {
         course={editingCourse}
         teachers={teachers}
       />
+
+      {isConfirmModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">Confirmar eliminación</h2>
+            <p className="mb-6">
+              ¿Estás seguro de que deseas eliminar el curso "{courses.find(c => c.courseId === courseToDelete)?.courseName}"? Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setIsConfirmModalOpen(false)}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

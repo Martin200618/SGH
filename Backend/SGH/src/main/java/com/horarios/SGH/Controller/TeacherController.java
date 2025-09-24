@@ -43,6 +43,42 @@ public class TeacherController {
                         .body(new responseDTO("ERROR", "El nombre del profesor no puede contener números"));
             }
 
+            // VALIDACIÓN MANUAL ADICIONAL: Verificar que el nombre NO contenga números
+            if (dto.getTeacherName() != null && dto.getTeacherName().matches(".*\\d.*")) {
+                return ResponseEntity.badRequest()
+                        .body(new responseDTO("ERROR", "El nombre del profesor no puede contener números"));
+            }
+
+            // VALIDACIÓN MANUAL ADICIONAL: Verificar longitud
+            if (dto.getTeacherName() != null) {
+                if (dto.getTeacherName().length() < 5) {
+                    return ResponseEntity.badRequest()
+                            .body(new responseDTO("ERROR", "El nombre del profesor debe tener al menos 5 caracteres"));
+                }
+                if (dto.getTeacherName().length() > 50) {
+                    return ResponseEntity.badRequest()
+                            .body(new responseDTO("ERROR", "El nombre del profesor debe tener máximo 50 caracteres"));
+                }
+            }
+
+            // VALIDACIÓN MANUAL ADICIONAL: Verificar que el nombre NO contenga números
+            if (dto.getTeacherName() != null && dto.getTeacherName().matches(".*\\d.*")) {
+                return ResponseEntity.badRequest()
+                        .body(new responseDTO("ERROR", "El nombre del profesor no puede contener números"));
+            }
+
+            // VALIDACIÓN MANUAL ADICIONAL: Verificar longitud
+            if (dto.getTeacherName() != null) {
+                if (dto.getTeacherName().length() < 5) {
+                    return ResponseEntity.badRequest()
+                            .body(new responseDTO("ERROR", "El nombre del profesor debe tener al menos 5 caracteres"));
+                }
+                if (dto.getTeacherName().length() > 50) {
+                    return ResponseEntity.badRequest()
+                            .body(new responseDTO("ERROR", "El nombre del profesor debe tener máximo 50 caracteres"));
+                }
+            }
+
             // Verificar que la materia existe si subjectId > 0
             if (dto.getSubjectId() > 0) {
                 Optional<subjects> subject = Isubjects.findById(dto.getSubjectId());

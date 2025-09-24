@@ -22,9 +22,7 @@ const TableCourse = ({ courses, onEdit, onDelete }: TableCourseProps) => {
   };
 
   const handleDelete = (id: number) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este curso?')) {
-      onDelete(id);
-    }
+    onDelete(id);
   };
 
   return (
