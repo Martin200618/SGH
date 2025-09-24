@@ -7,6 +7,8 @@ import CourseModal from "@/components/course/CourseModal";
 import SearchBar from "@/components/dashboard/SearchBar";
 import { getAllCourses, createCourse, updateCourse, deleteCourse, Course } from "@/api/services/courseApi";
 import { getAllTeachers, Teacher } from "@/api/services/teacherApi";
+import Cookies from 'js-cookie';
+import { useRouter } from "next/navigation";
 
 export default function CoursePage() {
   const [courses, setCourses] = useState<{ courseId: number; courseName: string; directorName?: string }[]>([]);
@@ -16,8 +18,17 @@ export default function CoursePage() {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
+    const token = Cookies.get('token');
+
+    // Si no hay token, redirigir al login
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
     const fetchData = async () => {
       try {
         const [coursesData, teachersData] = await Promise.all([

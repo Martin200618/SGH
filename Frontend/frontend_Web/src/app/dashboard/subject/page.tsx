@@ -7,6 +7,8 @@ import SubjectModal from "@/components/subject/SubjectModal";
 import SearchBar from "@/components/dashboard/SearchBar";
 import { getAllSubjects, createSubject, updateSubject, deleteSubject, Subject } from "@/api/services/subjectApi";
 import { getAllTeachers } from "@/api/services/teacherApi";
+import Cookies from 'js-cookie';
+import { useRouter } from "next/navigation";
 
 export default function SubjectPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -15,8 +17,17 @@ export default function SubjectPage() {
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
+    const token = Cookies.get('token');
+
+    // Si no hay token, redirigir al login
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
     const fetchData = async () => {
       try {
         const [subjectsData, teachersData] = await Promise.all([

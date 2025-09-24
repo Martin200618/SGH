@@ -9,6 +9,7 @@ import { getScheduleHistory, generateSchedule, ScheduleHistory, Schedule, create
 import { getAllCourses, Course } from "@/api/services/courseApi";
 import { getAllSubjects, Subject } from "@/api/services/subjectApi";
 import { getAllTeachers, Teacher, getTeacherAvailability } from "@/api/services/teacherApi";
+import Cookies from 'js-cookie';
 
 const exportSchedule = async (format: 'pdf' | 'excel' | 'image', type: 'course' | 'teacher' | 'all', id?: number) => {
   let url = `http://localhost:8085/schedules/${format}`;
@@ -66,6 +67,14 @@ export default function SchedulePage() {
   const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
 
   useEffect(() => {
+    const token = Cookies.get('token');
+
+    // Si no hay token, redirigir al login
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
     loadHistory();
   }, []);
 

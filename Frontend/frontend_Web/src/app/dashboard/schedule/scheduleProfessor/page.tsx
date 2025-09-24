@@ -7,6 +7,8 @@ import HeaderSchedule from "@/components/schedule/scheduleCourse/HeaderSchedule"
 import { getAllSchedules, Schedule } from "@/api/services/scheduleApi";
 import { getAllTeachers, Teacher } from "@/api/services/teacherApi";
 import { getAllCourses, Course } from "@/api/services/courseApi";
+import Cookies from 'js-cookie';
+import { useRouter } from "next/navigation";
 
 const exportSchedule = async (format: 'pdf' | 'excel' | 'image', type: 'course' | 'teacher' | 'all', id?: number) => {
   let url = `http://localhost:8085/schedules/${format}`;
@@ -172,9 +174,18 @@ export default function ProfessorPage() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [filteredTeachers, setFilteredTeachers] = useState<Teacher[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const router = useRouter();
 
 
   useEffect(() => {
+    const token = Cookies.get('token');
+
+    // Si no hay token, redirigir al login
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
     const fetchData = async () => {
       try {
         const [schedulesData, teachersData, coursesData] = await Promise.all([

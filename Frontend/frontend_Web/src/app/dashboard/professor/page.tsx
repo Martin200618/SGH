@@ -8,6 +8,8 @@ import AvailabilityModal from "@/components/professors/AvailabilityModal";
 import SearchBar from "@/components/dashboard/SearchBar";
 import { getAllTeachers, createTeacher, updateTeacher, deleteTeacher, getTeacherAvailability, Teacher, TeacherAvailability } from "@/api/services/teacherApi";
 import { getAllSubjects, Subject } from "@/api/services/subjectApi";
+import Cookies from 'js-cookie';
+import { useRouter } from "next/navigation";
 
 interface TeacherWithSubject extends Teacher {
   subjectName?: string;
@@ -25,8 +27,17 @@ export default function ProfessorPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
+    const token = Cookies.get('token');
+
+    // Si no hay token, redirigir al login
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
     fetchData();
   }, []);
 
