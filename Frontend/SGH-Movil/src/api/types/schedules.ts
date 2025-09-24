@@ -1,13 +1,13 @@
-export interface ScheduleHistory {
+export interface ScheduleDTO {
   id: number;
-  executedBy: string;
-  executedAt: string; // ISO string
-  status: 'RUNNING' | 'SUCCESS' | 'FAILED';
-  totalGenerated: number;
-  message: string;
-  periodStart: string;
-  periodEnd: string;
-  dryRun: boolean;
-  force: boolean;
-  params: string;
+  scheduleName: string;
+  courseId: number;
+  courseName: string;
+  teacherId: number;
+  teacherName: string;
+  subjectId: number;
+  subjectName: string;
+  day: string;       // "Lunes"
+  startTime: string; // "08:00"
+  endTime: string;   // "09:00"
 }

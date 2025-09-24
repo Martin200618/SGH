@@ -1,25 +1,27 @@
 import React from 'react';
-import { View, TextInput, Image } from 'react-native';
+import { View, TextInput } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { styles } from '../../styles/schedulesStyles';
 
-export interface SearchBarProps {
+interface Props {
   value: string;
   onChange: (text: string) => void;
+  placeholder?: string;
 }
 
-export default function SearchBar({ value, onChange }: SearchBarProps) {
+export default function SearchBar({ value, onChange, placeholder = 'Buscar...' }: Props) {
   return (
     <View style={styles.searchBarContainer}>
-      <Image
-        source={require('../../assets/images/search.png')}
-        style={{ width: 20, height: 20, tintColor: '#999' }}
-      />
+      <Ionicons name="search" size={20} color="#888" />
       <TextInput
         style={styles.searchInput}
-        placeholder="Buscar..."
-        placeholderTextColor="#999"
+        placeholder={placeholder}
         value={value}
         onChangeText={onChange}
+        placeholderTextColor="#aaa"
+        autoCapitalize="none"
+        autoCorrect={false}
+        clearButtonMode="while-editing"
       />
     </View>
   );
