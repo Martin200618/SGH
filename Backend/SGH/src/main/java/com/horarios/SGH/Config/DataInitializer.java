@@ -159,16 +159,32 @@ public class DataInitializer {
 
             // Crear cursos si no existen
             if (courseRepo.count() == 0) {
+                // Obtener las especializaciones creadas
+                subjects math = subjectRepo.findBySubjectName("Matemáticas");
+                subjects physics = subjectRepo.findBySubjectName("Física");
+                subjects chemistry = subjectRepo.findBySubjectName("Química");
+
+                teachers teacher1 = teacherRepo.findAll().stream().filter(t -> t.getTeacherName().equals("Juan Pérez")).findFirst().orElse(null);
+                teachers teacher2 = teacherRepo.findAll().stream().filter(t -> t.getTeacherName().equals("María García")).findFirst().orElse(null);
+                teachers teacher3 = teacherRepo.findAll().stream().filter(t -> t.getTeacherName().equals("Carlos López")).findFirst().orElse(null);
+
+                // Asignar teacherSubject a cursos
+                TeacherSubject ts1 = teacherSubjectRepo.findByTeacher_IdAndSubject_Id(teacher1.getId(), math.getId()).orElse(null);
                 courses course1 = new courses();
                 course1.setCourseName("1A");
+                course1.setTeacherSubject(ts1);
                 courseRepo.save(course1);
 
+                TeacherSubject ts2 = teacherSubjectRepo.findByTeacher_IdAndSubject_Id(teacher2.getId(), physics.getId()).orElse(null);
                 courses course2 = new courses();
                 course2.setCourseName("2B");
+                course2.setTeacherSubject(ts2);
                 courseRepo.save(course2);
 
+                TeacherSubject ts3 = teacherSubjectRepo.findByTeacher_IdAndSubject_Id(teacher3.getId(), chemistry.getId()).orElse(null);
                 courses course3 = new courses();
                 course3.setCourseName("3C");
+                course3.setTeacherSubject(ts3);
                 courseRepo.save(course3);
 
                 System.out.println(">> Cursos iniciales creados");

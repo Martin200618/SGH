@@ -30,13 +30,24 @@ public class ScheduleExportService implements IScheduleExportService {
         for (schedule s : schedules) {
             timeSet.add(s.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm")));
         }
+        // Always include break times
+        timeSet.add("09:00");
+        timeSet.add("12:00");
         List<String> times = new java.util.ArrayList<>();
         for (String startTime : timeSet) {
             String[] parts = startTime.split(":");
             int hours = Integer.parseInt(parts[0]);
             int minutes = Integer.parseInt(parts[1]);
-            int endHours = hours + 1;
-            String endTime = String.format("%02d:%02d", endHours, minutes);
+            int endHours = hours;
+            int endMinutes = minutes;
+            if (startTime.equals("09:00")) {
+                // Descanso de 30 minutos
+                endMinutes += 30;
+            } else {
+                // Clases de 1 hora
+                endHours += 1;
+            }
+            String endTime = String.format("%02d:%02d", endHours, endMinutes);
             String periodStart = formatTime(startTime);
             String periodEnd = formatTime(endTime);
             times.add(periodStart + " - " + periodEnd);
@@ -124,7 +135,9 @@ public class ScheduleExportService implements IScheduleExportService {
             for (String day : days) {
                 schedule s = getScheduleForTimeAndDay(horarios, time, day);
                 String content = "";
-                if (time.contains("12:00 PM")) {
+                if (time.contains("9:00 AM")) {
+                    content = "Descanso";
+                } else if (time.contains("12:00 PM")) {
                     content = "Almuerzo";
                 } else if (s != null) {
                     String docente = s.getTeacherId() != null ? s.getTeacherId().getTeacherName() : "";
@@ -134,7 +147,9 @@ public class ScheduleExportService implements IScheduleExportService {
 
                 PdfPCell contentCell = new PdfPCell(new Phrase(content, cellFont));
                 contentCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                if (time.contains("12:00 PM")) {
+                if (time.contains("9:00 AM")) {
+                    contentCell.setBackgroundColor(new BaseColor(255, 255, 204)); // Amarillo claro para descanso
+                } else if (time.contains("12:00 PM")) {
                     contentCell.setBackgroundColor(new BaseColor(255, 255, 153)); // Amarillo claro para almuerzo
                 }
                 table.addCell(contentCell);
@@ -228,7 +243,9 @@ public class ScheduleExportService implements IScheduleExportService {
                 String day = days[i];
                 schedule s = getScheduleForTimeAndDay(horarios, time, day);
                 String content = "";
-                if (time.contains("12:00 PM")) {
+                if (time.contains("9:00 AM")) {
+                    content = "Descanso";
+                } else if (time.contains("12:00 PM")) {
                     content = "Almuerzo";
                 } else if (s != null) {
                     String docente = s.getTeacherId() != null ? s.getTeacherId().getTeacherName() : "";
@@ -340,7 +357,9 @@ public class ScheduleExportService implements IScheduleExportService {
                 String day = days[i];
                 schedule s = getScheduleForTimeAndDay(horarios, time, day);
                 String content = "";
-                if (time.contains("12:00 PM")) {
+                if (time.contains("9:00 AM")) {
+                    content = "Descanso";
+                } else if (time.contains("12:00 PM")) {
                     content = "Almuerzo";
                 } else if (s != null) {
                     String docente = s.getTeacherId() != null ? s.getTeacherId().getTeacherName() : "";

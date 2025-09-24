@@ -46,14 +46,22 @@ const generateTimes = (schedules: Schedule[]) => {
     timeSet.add(schedule.startTime);
   });
   // Always include break times
-  timeSet.add('08:00');
+  timeSet.add('09:00');
   timeSet.add('12:00');
   const sortedTimes = Array.from(timeSet).sort();
   const times: string[] = [];
   sortedTimes.forEach(startTime => {
     const [hours, minutes] = startTime.split(':').map(Number);
-    const endHours = hours + 1;
-    const endTime = `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    let endHours = hours;
+    let endMinutes = minutes;
+    if (startTime === '09:00') {
+      // Descanso de 30 minutos
+      endMinutes += 30;
+    } else {
+      // Clases de 1 hora
+      endHours += 1;
+    }
+    const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
     times.push(`${formatTime(startTime)} - ${formatTime(endTime)}`);
   });
   return times;
@@ -130,7 +138,7 @@ const renderScheduleTable = (schedules: Schedule[], teacherName: string, key: st
                 {days.map((day) => {
                   const schedule = getScheduleForTimeAndDay(schedules, time, day);
                   const isLunchTime = time === "12:00 PM - 1:00 PM";
-                  const isBreak = time === "8:00 AM - 9:00 AM";
+                  const isBreak = time === "9:00 AM - 9:30 AM";
                   const content = schedule ? `${courseMap[schedule.courseId]?.courseName || 'Curso'}/${schedule.subjectName || 'Materia'}` : isLunchTime ? "Almuerzo" : isBreak ? "Descanso" : "";
 
                   return (
@@ -162,6 +170,7 @@ const renderScheduleTable = (schedules: Schedule[], teacherName: string, key: st
 export default function ProfessorPage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [filteredTeachers, setFilteredTeachers] = useState<Teacher[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
 
 
@@ -175,6 +184,7 @@ export default function ProfessorPage() {
         ]);
         setSchedules(schedulesData);
         setTeachers(teachersData);
+        setFilteredTeachers(teachersData);
         setCourses(coursesData);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -200,6 +210,17 @@ export default function ProfessorPage() {
     return acc;
   }, {} as Record<number, Schedule[]>);
 
+  const handleSearch = (query: string) => {
+    if (query.trim() === '') {
+      setFilteredTeachers(teachers);
+    } else {
+      const filtered = teachers.filter(teacher =>
+        teacher.teacherName.toLowerCase().includes(query.toLowerCase())
+      );
+      setFilteredTeachers(filtered);
+    }
+  };
+
 
   return (
     <>
@@ -208,11 +229,11 @@ export default function ProfessorPage() {
         <HeaderSchedule/>
 
         <div className="my-6">
-          <SearchBar/>
+          <SearchBar placeholder="Buscar profesores por nombre..." onSearch={handleSearch} />
         </div>
         {/* Tabla de Profesores */}
         <div className="my-6">
-          {teachers.map((teacher) => {
+          {filteredTeachers.map((teacher) => {
             const teacherSchedules = schedulesByTeacher[teacher.teacherId] || [];
             return teacherSchedules.length > 0 ? (
               renderScheduleTable(teacherSchedules, teacher.teacherName, teacher.teacherId.toString(), courseMap)

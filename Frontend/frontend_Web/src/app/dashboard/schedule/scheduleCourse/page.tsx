@@ -47,14 +47,22 @@ const generateTimes = (schedules: Schedule[]) => {
     timeSet.add(schedule.startTime);
   });
   // Always include break times
-  timeSet.add('08:00');
+  timeSet.add('09:00');
   timeSet.add('12:00');
   const sortedTimes = Array.from(timeSet).sort();
   const times: string[] = [];
   sortedTimes.forEach(startTime => {
     const [hours, minutes] = startTime.split(':').map(Number);
-    const endHours = hours + 1;
-    const endTime = `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    let endHours = hours;
+    let endMinutes = minutes;
+    if (startTime === '09:00') {
+      // Descanso de 30 minutos
+      endMinutes += 30;
+    } else {
+      // Clases de 1 hora
+      endHours += 1;
+    }
+    const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
     times.push(`${formatTime(startTime)} - ${formatTime(endTime)}`);
   });
   return times;
@@ -131,7 +139,7 @@ const renderScheduleTable = (schedules: Schedule[], courseName: string, key: str
                 {days.map((day) => {
                   const schedule = getScheduleForTimeAndDay(schedules, time, day);
                   const isLunchTime = time === "12:00 PM - 1:00 PM";
-                  const isBreak = time === "8:00 AM - 9:00 AM";
+                  const isBreak = time === "9:00 AM - 9:30 AM";
                   const content = schedule ? `${schedule.teacherName || 'Profesor'}/${schedule.subjectName || 'Materia'}` : isLunchTime ? "Almuerzo" : isBreak ? "Descanso" : "";
 
                   return (
@@ -163,6 +171,7 @@ const renderScheduleTable = (schedules: Schedule[], courseName: string, key: str
 export default function ScheduleCoursePage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
@@ -177,6 +186,7 @@ export default function ScheduleCoursePage() {
         ]);
         setSchedules(schedulesData);
         setCourses(coursesData);
+        setFilteredCourses(coursesData);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -242,6 +252,17 @@ export default function ScheduleCoursePage() {
     setIsGenerateModalOpen(false);
   };
 
+  const handleSearch = (query: string) => {
+    if (query.trim() === '') {
+      setFilteredCourses(courses);
+    } else {
+      const filtered = courses.filter(course =>
+        course.courseName.toLowerCase().includes(query.toLowerCase())
+      );
+      setFilteredCourses(filtered);
+    }
+  };
+
   return (
     <>
       {/* Main content */}
@@ -249,11 +270,11 @@ export default function ScheduleCoursePage() {
         <HeaderSchedule/>
 
         <div className="my-6">
-          <SearchBar/>
+          <SearchBar placeholder="Buscar cursos por nombre..." onSearch={handleSearch} />
         </div>
         {/* Tabla de Horarios */}
         <div className="my-6">
-          {courses.map((course) => {
+          {filteredCourses.map((course) => {
             const courseSchedules = schedulesByCourse[course.courseId] || [];
             return courseSchedules.length > 0 ? (
               renderScheduleTable(courseSchedules, course.courseName, course.courseId.toString())
