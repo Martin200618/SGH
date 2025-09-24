@@ -11,10 +11,10 @@ export async function getAllSchedules(token: string): Promise<ScheduleDTO[]> {
     },
   });
 
-  const data = await response.json();
+  const data = (await response.json()) as ScheduleDTO[] | { error?: string };
 
   if (!response.ok) {
-    throw new Error(data.error || 'Failed to fetch schedules');
+    throw new Error((data as any).error || 'Failed to fetch schedules');
   }
 
   return data as ScheduleDTO[];
@@ -30,10 +30,10 @@ export async function getSchedulesByCourse(token: string, courseId: number): Pro
     },
   });
 
-  const data = await response.json();
+  const data = (await response.json()) as ScheduleDTO[] | { error?: string };
 
   if (!response.ok) {
-    throw new Error(data.error || 'Failed to fetch schedules by course');
+    throw new Error((data as any).error || 'Failed to fetch schedules by course');
   }
 
   return data as ScheduleDTO[];
@@ -49,10 +49,10 @@ export async function getSchedulesByTeacher(token: string, teacherId: number): P
     },
   });
 
-  const data = await response.json();
+  const data = (await response.json()) as ScheduleDTO[] | { error?: string };
 
   if (!response.ok) {
-    throw new Error(data.error || 'Failed to fetch schedules by teacher');
+    throw new Error((data as any).error || 'Failed to fetch schedules by teacher');
   }
 
   return data as ScheduleDTO[];

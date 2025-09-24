@@ -8,11 +8,17 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-interface Props {
-  item: ScheduleDTO;
+interface CourseGroup {
+  courseId: number;
+  schedules: ScheduleDTO[];
 }
 
-export default function ScheduleCard({ item }: Props) {
+interface Props {
+  course: CourseGroup;
+  getCourseName: (id: number) => string;
+}
+
+export default function ScheduleCard({ course, getCourseName }: Props) {
   const [expanded, setExpanded] = useState(false);
 
   const toggleExpand = () => {
@@ -23,22 +29,25 @@ export default function ScheduleCard({ item }: Props) {
   return (
     <TouchableOpacity style={styles.courseItem} onPress={toggleExpand} activeOpacity={0.8}>
       <View style={{ flex: 1, paddingRight: 8 }}>
-        <Text style={styles.courseText}>
-          {item.subjectName} - {item.teacherName}
-        </Text>
-        <Text style={styles.courseText}>{item.courseName}</Text>
-        <Text style={styles.courseText}>
-          {item.day} {item.startTime} - {item.endTime}
-        </Text>
+        {/* Encabezado: nombre del curso */}
+        <Text style={styles.courseText}>{getCourseName(course.courseId)}</Text>
 
+        {/* Si está expandido, mostrar todos los horarios */}
         {expanded && (
           <View style={{ marginTop: 10 }}>
-            <Text style={styles.courseText}>📘 Materia: {item.subjectName}</Text>
-            <Text style={styles.courseText}>👨‍🏫 Profesor: {item.teacherName}</Text>
-            <Text style={styles.courseText}>🏫 Curso: {item.courseName}</Text>
-            <Text style={styles.courseText}>
-              🕒 Horario: {item.day} {item.startTime} - {item.endTime}
-            </Text>
+            {course.schedules.map((s) => (
+              <View key={s.id} style={{ marginBottom: 8 }}>
+                <Text style={styles.courseText}>
+                  📘 Materia: {s.subjectName || 'No asignada'}
+                </Text>
+                <Text style={styles.courseText}>
+                  👨‍🏫 Profesor: {s.teacherName || 'No asignado'}
+                </Text>
+                <Text style={styles.courseText}>
+                  🕒 Horario: {s.day || 'Día no definido'} {s.startTime || '--:--'} - {s.endTime || '--:--'}
+                </Text>
+              </View>
+            ))}
           </View>
         )}
       </View>
