@@ -26,6 +26,7 @@ public class schedule_history {
     private LocalDate periodStart;
     private LocalDate periodEnd;
     private boolean dryRun;
+    @Column(name = "force_flag")
     private boolean force;
 
     @Column(length = 500)

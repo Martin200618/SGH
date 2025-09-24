@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import Header from "@/components/dashboard/Header";
 import TeacherCard from "@/components/dashboard/TeacherCard";
-import ChartBar from "@/components/dashboard/ChartBar";
-import ChartDonut from "@/components/dashboard/ChartDonut";
 import { getAllTeachers, Teacher } from "@/api/services/teacherApi";
 
 export default function DashboardPage() {
@@ -42,8 +40,6 @@ export default function DashboardPage() {
 
         {/* Reportes */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ChartBar />
-          <ChartDonut />
         </div>
       </div>
     </>

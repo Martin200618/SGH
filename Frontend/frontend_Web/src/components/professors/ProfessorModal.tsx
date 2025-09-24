@@ -1,48 +1,89 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, BookOpen } from 'lucide-react';
-import { Subject } from '@/api/services/subjectApi';
+import { X, User } from 'lucide-react';
+import { getAllSubjects, Subject } from '../../api/services/subjectApi';
 
-interface Professor {
-  id: number;
-  nombre: string;
-  especializacion: string;
+interface Teacher {
+  teacherId: number;
+  teacherName: string;
   subjectId: number;
+  availabilitySummary?: string;
 }
 
 interface ProfessorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (professor: Omit<Professor, 'id'>) => Promise<void>;
-  professor?: Professor | null;
-  subjects: Subject[];
+  onSave: (teacher: Omit<Teacher, 'teacherId'>) => Promise<void>;
+  teacher?: Teacher | null;
 }
 
-const ProfessorModal: React.FC<ProfessorModalProps> = ({ isOpen, onClose, onSave, professor, subjects }) => {
-  const [nombre, setNombre] = useState('');
-  const [especializacion, setEspecializacion] = useState('');
+const ProfessorModal: React.FC<ProfessorModalProps> = ({ isOpen, onClose, onSave, teacher }) => {
+  const [teacherName, setTeacherName] = useState('');
+  const [subjectId, setSubjectId] = useState<number>(0);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (professor) {
-      setNombre(professor.nombre);
-      setEspecializacion(professor.especializacion);
-    } else {
-      setNombre('');
-      setEspecializacion('');
+    if (isOpen) {
+      loadSubjects();
+      if (teacher) {
+        setTeacherName(teacher.teacherName);
+        setSubjectId(teacher.subjectId);
+      } else {
+        setTeacherName('');
+        setSubjectId(0);
+      }
     }
-  }, [professor, isOpen]);
+  }, [teacher, isOpen]);
 
-  const handleSave = () => {
-    if (nombre.trim() && especializacion.trim()) {
-      const subjectId = subjects.find(s => s.subjectName === especializacion)?.subjectId || 1;
-      onSave({ nombre: nombre.trim(), especializacion: especializacion.trim(), subjectId });
+  const loadSubjects = async () => {
+    try {
+      const data = await getAllSubjects();
+      setSubjects(data);
+    } catch (error) {
+      console.error('Error loading subjects:', error);
+    }
+  };
+
+  const handleSave = async () => {
+    const trimmedName = teacherName.trim();
+    if (!trimmedName) {
+      setError('El nombre del profesor es requerido');
+      return;
+    }
+    if (trimmedName.length < 2) {
+      setError('El nombre debe tener al menos 2 caracteres');
+      return;
+    }
+    if (trimmedName.length > 100) {
+      setError('El nombre debe tener máximo 100 caracteres');
+      return;
+    }
+    if (!/^[a-zA-ZÀ-ÿ\s]+$/.test(trimmedName)) {
+      setError('El nombre solo puede contener letras y espacios');
+      return;
+    }
+    if (subjectId <= 0) {
+      setError('Debe seleccionar una materia');
+      return;
+    }
+
+    setError('');
+    setLoading(true);
+    try {
+      await onSave({ teacherName: trimmedName, subjectId });
       onClose();
+    } catch (error) {
+      console.error('Error saving teacher:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -52,10 +93,10 @@ const ProfessorModal: React.FC<ProfessorModalProps> = ({ isOpen, onClose, onSave
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                {professor ? 'Editar Profesor' : 'Agregar Profesor'}
+                {teacher ? 'Editar Profesor' : 'Agregar Profesor'}
               </h2>
               <p className="text-sm text-gray-600">
-                {professor ? 'Modifica la información del profesor' : 'Ingresa los datos del nuevo profesor'}
+                {teacher ? 'Modifica la información del profesor' : 'Ingresa la información del nuevo profesor'}
               </p>
             </div>
           </div>
@@ -73,36 +114,45 @@ const ProfessorModal: React.FC<ProfessorModalProps> = ({ isOpen, onClose, onSave
           <div className="space-y-2">
             <label className="flex items-center text-sm font-semibold text-gray-700">
               <User className="w-4 h-4 mr-2" />
-              Nombre completo
+              Nombre del profesor
             </label>
             <input
               type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
+              value={teacherName}
+              onChange={(e) => {
+                setTeacherName(e.target.value);
+                if (error) setError('');
+              }}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               placeholder="Ingresa el nombre del profesor"
             />
           </div>
 
-          {/* Especialización */}
+          {/* Materia */}
           <div className="space-y-2">
             <label className="flex items-center text-sm font-semibold text-gray-700">
-              <BookOpen className="w-4 h-4 mr-2" />
-              Especialización
+              Materia asignada
             </label>
             <select
-              value={especializacion}
-              onChange={(e) => setEspecializacion(e.target.value)}
+              value={subjectId}
+              onChange={(e) => {
+                setSubjectId(Number(e.target.value));
+                if (error) setError('');
+              }}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             >
-              <option value="">Selecciona una materia</option>
+              <option value={0}>Selecciona una materia</option>
               {subjects.map((subject) => (
-                <option key={subject.subjectId} value={subject.subjectName}>
+                <option key={subject.subjectId} value={subject.subjectId}>
                   {subject.subjectName}
                 </option>
               ))}
             </select>
           </div>
+
+          {error && (
+            <p className="text-red-500 text-sm">{error}</p>
+          )}
         </div>
 
         {/* Footer */}
@@ -110,14 +160,16 @@ const ProfessorModal: React.FC<ProfessorModalProps> = ({ isOpen, onClose, onSave
           <button
             onClick={onClose}
             className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+            disabled={loading}
           >
             Cancelar
           </button>
           <button
             onClick={handleSave}
-            className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
+            disabled={loading}
+            className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
           >
-            {professor ? 'Actualizar' : 'Crear'} Profesor
+            {loading ? 'Guardando...' : (teacher ? 'Actualizar' : 'Crear')} Profesor
           </button>
         </div>
       </div>

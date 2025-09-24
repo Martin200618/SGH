@@ -114,18 +114,19 @@ public class TeacherAvailabilityController {
     )
     @ApiResponse(
         responseCode = "200",
-        description = "Lista de disponibilidades encontradas",
+        description = "Lista de disponibilidades encontradas (puede estar vacía)",
         content = @Content(
             mediaType = "application/json",
             schema = @Schema(implementation = TeacherAvailability.class)
         )
     )
     public List<TeacherAvailability> getAvailability(@PathVariable Integer id) {
-        List<TeacherAvailability> availabilities = availabilityRepo.findByTeacher_Id(id);
-        if (availabilities.isEmpty()) {
-            throw new RuntimeException("No se encontró disponibilidad para el profesor con ID: " + id);
-        }
-        return availabilities;
+        // Validar que el profesor existe
+        teachers teacher = teacherRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Profesor no encontrado con ID: " + id));
+
+        // Retornar la disponibilidad (puede estar vacía)
+        return availabilityRepo.findByTeacher_Id(id);
     }
 
     @GetMapping("/available")

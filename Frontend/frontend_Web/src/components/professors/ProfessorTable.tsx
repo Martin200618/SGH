@@ -1,23 +1,26 @@
-import React, { useState } from 'react';
-import { Edit, Trash2 } from 'lucide-react';
-import ProfessorModal from './ProfessorModal';
+"use client";
 
-interface Professor {
-  id: number;
-  nombre: string;
-  especializacion: string;
+import React from 'react';
+import { Edit, Trash2, Clock } from 'lucide-react';
+
+interface Teacher {
+  teacherId: number;
+  teacherName: string;
+  subjectId: number;
+  subjectName?: string;
+  availabilityDays?: string;
 }
 
 interface ProfessorTableProps {
-  teachers: Professor[];
-  onEdit: (id: number) => void;
+  teachers: Teacher[];
+  onEdit: (teacher: Teacher) => void;
   onDelete: (id: number) => void;
+  onManageAvailability: (teacher: Teacher) => void;
 }
 
-const ProfessorTable = ({ teachers, onEdit, onDelete }: ProfessorTableProps) => {
-
-  const handleEdit = (id: number) => {
-    onEdit(id);
+const ProfessorTable = ({ teachers, onEdit, onDelete, onManageAvailability }: ProfessorTableProps) => {
+  const handleEdit = (teacher: Teacher) => {
+    onEdit(teacher);
   };
 
   const handleDelete = (id: number) => {
@@ -27,7 +30,6 @@ const ProfessorTable = ({ teachers, onEdit, onDelete }: ProfessorTableProps) => 
   };
 
   return (
-
     <div className="p-6 bg-gray-50 min-h">
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="overflow-x-auto">
@@ -38,7 +40,10 @@ const ProfessorTable = ({ teachers, onEdit, onDelete }: ProfessorTableProps) => 
                   Nombre
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
-                  Especialización
+                  Materia
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
+                  Disponibilidad
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">
                   Acciones
@@ -47,27 +52,34 @@ const ProfessorTable = ({ teachers, onEdit, onDelete }: ProfessorTableProps) => 
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {teachers.map((teacher) => (
-                <tr key={teacher.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={teacher.teacherId} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {teacher.nombre}
+                    <span className="font-medium">{teacher.teacherName}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-blue-600 font-medium">
-                      {teacher.especializacion}
-                    </span>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-medium">
+                    {teacher.subjectName || 'Sin asignar'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {teacher.availabilityDays || 'No configurada'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
-                        onClick={() => handleEdit(teacher.id)}
+                        onClick={() => handleEdit(teacher)}
                         className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
                       >
                         <Edit className="w-3 h-3 mr-1" />
                         Editar
                       </button>
-                      <span className="text-gray-300">|</span>
                       <button
-                        onClick={() => handleDelete(teacher.id)}
+                        onClick={() => onManageAvailability(teacher)}
+                        className="inline-flex items-center px-3 py-1 text-xs font-medium text-green-600 bg-green-100 rounded hover:bg-green-200 transition-colors"
+                      >
+                        <Clock className="w-3 h-3 mr-1" />
+                        Disponibilidad
+                      </button>
+                      <button
+                        onClick={() => handleDelete(teacher.teacherId)}
                         className="inline-flex items-center px-3 py-1 text-xs font-medium text-red-600 bg-red-100 rounded hover:bg-red-200 transition-colors"
                       >
                         <Trash2 className="w-3 h-3 mr-1" />
@@ -80,7 +92,7 @@ const ProfessorTable = ({ teachers, onEdit, onDelete }: ProfessorTableProps) => 
             </tbody>
           </table>
         </div>
-        
+
         {teachers.length === 0 && (
           <div className="px-6 py-12 text-center">
             <p className="text-gray-500 text-sm">No hay profesores registrados</p>

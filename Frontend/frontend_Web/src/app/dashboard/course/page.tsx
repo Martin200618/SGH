@@ -13,6 +13,7 @@ export default function CoursePage() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -43,6 +44,7 @@ export default function CoursePage() {
 
   const handleSaveCourse = async (courseData: Omit<Course, 'courseId'>) => {
     try {
+      setErrorMessage('');
       if (editingCourse) {
         // Editar curso existente
         await updateCourse(editingCourse.courseId, {
@@ -68,8 +70,9 @@ export default function CoursePage() {
       }));
       setCourses(mappedCourses);
       setIsModalOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving course:", error);
+      setErrorMessage(error.message || 'Error al guardar el curso');
     }
   };
 
@@ -93,6 +96,7 @@ export default function CoursePage() {
   const handleDeleteCourse = async (id: number) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este curso?')) {
       try {
+        setErrorMessage('');
         await deleteCourse(id);
         // Refetch
         const [coursesData, teachersData] = await Promise.all([
@@ -105,8 +109,9 @@ export default function CoursePage() {
           directorName: course.gradeDirectorId ? teachersData.find(t => t.teacherId === course.gradeDirectorId)?.teacherName : undefined,
         }));
         setCourses(mappedCourses);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error deleting course:", error);
+        setErrorMessage(error.message || 'Error al eliminar el curso');
       }
     }
   };
@@ -119,6 +124,11 @@ export default function CoursePage() {
         <div className="my-6">
           <SearchBar />
         </div>
+        {errorMessage && (
+          <div className="my-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {errorMessage}
+          </div>
+        )}
         <div className="my-6">
           <TableCourse
             courses={courses}

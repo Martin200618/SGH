@@ -58,7 +58,7 @@ export default function Sidebar() {
           label: "Horarios Profesores",
           path: "/dashboard/schedule/scheduleProfessor",
         },
-        { label: "General Horario", path: "/dashboard/schedule" },
+        { label: "Generar Horario", path: "/dashboard/schedule" },
       ],
     },
     { icon: Users, label: "Profesores", path: "/dashboard/professor" },

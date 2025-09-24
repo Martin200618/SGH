@@ -189,7 +189,7 @@ public class ScheduleGenerationService implements IScheduleGenerationService {
             case WEDNESDAY -> "Miércoles";
             case THURSDAY -> "Jueves";
             case FRIDAY -> "Viernes";
-            default -> "Lunes"; // Default para fines de semana
+            default -> null; // No generar para fines de semana
         };
     }
 
@@ -199,7 +199,7 @@ public class ScheduleGenerationService implements IScheduleGenerationService {
 
         while (!currentDate.isAfter(endDate)) {
             String dayName = getDayNameFromDate(currentDate);
-            if (!days.contains(dayName)) {
+            if (dayName != null && !days.contains(dayName)) {
                 days.add(dayName);
             }
             currentDate = currentDate.plusDays(1);

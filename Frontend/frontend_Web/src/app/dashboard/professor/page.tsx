@@ -1,141 +1,193 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ProfessorTable from "@/components/professors/ProfessorTable";
 import HeaderProfessor from "@/components/professors/HeaderProfessor";
-import SearchBar from "@/components/dashboard/SearchBar";
+import ProfessorTable from "@/components/professors/ProfessorTable";
 import ProfessorModal from "@/components/professors/ProfessorModal";
-import { getAllTeachers, createTeacher, updateTeacher, deleteTeacher, Teacher } from "@/api/services/teacherApi";
+import AvailabilityModal from "@/components/professors/AvailabilityModal";
+import SearchBar from "@/components/dashboard/SearchBar";
+import { getAllTeachers, createTeacher, updateTeacher, deleteTeacher, getTeacherAvailability, Teacher, TeacherAvailability } from "@/api/services/teacherApi";
 import { getAllSubjects, Subject } from "@/api/services/subjectApi";
 
-interface Professor {
-  id: number;
-  nombre: string;
-  especializacion: string;
-  subjectId: number;
+interface TeacherWithSubject extends Teacher {
+  subjectName?: string;
+  availabilityDays?: string;
 }
 
 export default function ProfessorPage() {
-  const [teachers, setTeachers] = useState<Professor[]>([]);
+  const [teachers, setTeachers] = useState<TeacherWithSubject[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProfessor, setEditingProfessor] = useState<Professor | null>(null);
+  const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false);
+  const [selectedTeacherForAvailability, setSelectedTeacherForAvailability] = useState<{id: number, name: string} | null>(null);
+  const [editingTeacher, setEditingTeacher] = useState<TeacherWithSubject | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [teachersData, subjectsData] = await Promise.all([
-          getAllTeachers(),
-          getAllSubjects()
-        ]);
-        setSubjects(subjectsData);
-        const mappedTeachers = teachersData.map((teacher) => ({
-          id: teacher.teacherId,
-          nombre: teacher.teacherName,
-          especializacion: subjectsData.find(s => s.subjectId === teacher.subjectId)?.subjectName || "Sin especialización",
-          subjectId: teacher.subjectId,
-        }));
-        setTeachers(mappedTeachers);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-
     fetchData();
   }, []);
 
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [teachersData, subjectsData] = await Promise.all([
+        getAllTeachers(),
+        getAllSubjects()
+      ]);
+
+      // Cargar disponibilidad para cada profesor
+      const teachersWithAvailability = await Promise.all(
+        teachersData.map(async (teacher) => {
+          try {
+            const availability = await getTeacherAvailability(teacher.teacherId);
+            const availabilityDays = availability.length > 0
+              ? availability.map(a => a.day).join(', ')
+              : 'No configurada';
+
+            return {
+              ...teacher,
+              subjectName: subjectsData.find(subject => subject.subjectId === teacher.subjectId)?.subjectName,
+              availabilityDays
+            };
+          } catch (error) {
+            console.error(`Error loading availability for teacher ${teacher.teacherId}:`, error);
+            return {
+              ...teacher,
+              subjectName: subjectsData.find(subject => subject.subjectId === teacher.subjectId)?.subjectName,
+              availabilityDays: 'No configurada'
+            };
+          }
+        })
+      );
+
+      setTeachers(teachersWithAvailability);
+      setSubjects(subjectsData);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setErrorMessage('Error al cargar los datos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddProfessor = () => {
-    setEditingProfessor(null);
+    setEditingTeacher(null);
     setIsModalOpen(true);
   };
 
-  const handleSaveProfessor = async (professorData: Omit<Professor, 'id'>) => {
+  const handleSaveTeacher = async (teacherData: Omit<Teacher, 'teacherId'>) => {
     try {
-      const subjectId = subjects.find(s => s.subjectName === professorData.especializacion)?.subjectId || 1;
-      if (editingProfessor) {
+      setErrorMessage('');
+      if (editingTeacher) {
         // Editar profesor existente
-        await updateTeacher(editingProfessor.id, { teacherName: professorData.nombre, subjectId });
+        await updateTeacher(editingTeacher.teacherId, {
+          teacherName: teacherData.teacherName,
+          subjectId: teacherData.subjectId
+        });
       } else {
         // Agregar nuevo profesor
-        await createTeacher({ teacherName: professorData.nombre, subjectId });
+        await createTeacher({
+          teacherName: teacherData.teacherName,
+          subjectId: teacherData.subjectId
+        });
       }
-      // Refetch teachers
-      const data: Teacher[] = await getAllTeachers();
-      const mappedTeachers = data.map((teacher) => ({
-        id: teacher.teacherId,
-        nombre: teacher.teacherName,
-        especializacion: subjects.find(s => s.subjectId === teacher.subjectId)?.subjectName || "Sin especialización",
-        subjectId: teacher.subjectId,
-      }));
-      setTeachers(mappedTeachers);
+      await fetchData(); // Refetch data including availability
       setIsModalOpen(false);
-    } catch (error) {
-      console.error("Error saving professor:", error);
+    } catch (error: any) {
+      console.error("Error saving teacher:", error);
+      setErrorMessage(error.message || 'Error al guardar el profesor');
+      throw error; // Re-throw to let modal handle it
     }
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setEditingProfessor(null);
+    setEditingTeacher(null);
   };
 
-  const handleEditProfessor = (id: number) => {
-    const professor = teachers.find(t => t.id === id);
-    if (professor) {
-      setEditingProfessor(professor);
-      setIsModalOpen(true);
+  const handleOpenAvailabilityModal = (teacher: TeacherWithSubject) => {
+    setSelectedTeacherForAvailability({ id: teacher.teacherId, name: teacher.teacherName });
+    setIsAvailabilityModalOpen(true);
+  };
+
+  const handleCloseAvailabilityModal = () => {
+    setIsAvailabilityModalOpen(false);
+    setSelectedTeacherForAvailability(null);
+  };
+
+  const handleAvailabilityUpdated = (teacherId: number, availabilityDays: string) => {
+    // Actualizar el profesor específico en el estado sin recargar todos los datos
+    setTeachers(prevTeachers =>
+      prevTeachers.map(teacher =>
+        teacher.teacherId === teacherId
+          ? { ...teacher, availabilityDays }
+          : teacher
+      )
+    );
+  };
+
+  const handleEditTeacher = (teacher: TeacherWithSubject) => {
+    setEditingTeacher(teacher);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteTeacher = async (id: number) => {
+    try {
+      setErrorMessage('');
+      await deleteTeacher(id);
+      await fetchData(); // Refetch data including availability
+    } catch (error: any) {
+      console.error("Error deleting teacher:", error);
+      setErrorMessage(error.message || 'Error al eliminar el profesor');
     }
   };
 
-  const handleDeleteProfessor = async (id: number) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este profesor?')) {
-      try {
-        await deleteTeacher(id);
-        // Refetch teachers
-        const data: Teacher[] = await getAllTeachers();
-        const mappedTeachers = data.map((teacher) => ({
-          id: teacher.teacherId,
-          nombre: teacher.teacherName,
-          especializacion: subjects.find(s => s.subjectId === teacher.subjectId)?.subjectName || "Sin especialización",
-          subjectId: teacher.subjectId,
-        }));
-        setTeachers(mappedTeachers);
-      } catch (error) {
-        console.error("Error deleting professor:", error);
-      }
-    }
-  };
   return (
     <>
       {/* Main content */}
       <div className="flex-1 p-6">
         <HeaderProfessor onAddProfessor={handleAddProfessor} />
-
         <div className="my-6">
-                  <SearchBar/>
+          <SearchBar />
         </div>
-        {/* Tabla de Profesores */}
-        <div className="my-6">
-          <ProfessorTable
-            teachers={teachers}
-            onEdit={handleEditProfessor}
-            onDelete={handleDeleteProfessor}
-          />
-        </div>
-
-        {/* Reportes */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Aquí irán los reportes */}
-        </div>
+        {errorMessage && (
+          <div className="my-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {errorMessage}
+          </div>
+        )}
+        {loading ? (
+          <div className="my-6 text-center">
+            <p className="text-gray-500">Cargando profesores...</p>
+          </div>
+        ) : (
+          <div className="my-6">
+            <ProfessorTable
+              teachers={teachers}
+              onEdit={handleEditTeacher}
+              onDelete={handleDeleteTeacher}
+              onManageAvailability={handleOpenAvailabilityModal}
+            />
+          </div>
+        )}
       </div>
 
       <ProfessorModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        onSave={handleSaveProfessor}
-        professor={editingProfessor}
-        subjects={subjects}
+        onSave={handleSaveTeacher}
+        teacher={editingTeacher}
       />
+
+      {selectedTeacherForAvailability && (
+        <AvailabilityModal
+          isOpen={isAvailabilityModalOpen}
+          onClose={handleCloseAvailabilityModal}
+          teacherId={selectedTeacherForAvailability.id}
+          teacherName={selectedTeacherForAvailability.name}
+          onAvailabilityUpdated={handleAvailabilityUpdated}
+        />
+      )}
     </>
   );
 }

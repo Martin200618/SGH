@@ -7,6 +7,7 @@ import com.horarios.SGH.Repository.Isubjects;
 import com.horarios.SGH.Service.TeacherService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -17,6 +18,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/teachers")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class TeacherController {
 
     private final TeacherService service;
@@ -41,11 +43,13 @@ public class TeacherController {
                         .body(new responseDTO("ERROR", "El nombre del profesor no puede contener números"));
             }
 
-            // Verificar que la materia existe
-            Optional<subjects> subject = Isubjects.findById(dto.getSubjectId());
-            if (subject.isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(new responseDTO("ERROR", "La materia con ID " + dto.getSubjectId() + " no existe"));
+            // Verificar que la materia existe si subjectId > 0
+            if (dto.getSubjectId() > 0) {
+                Optional<subjects> subject = Isubjects.findById(dto.getSubjectId());
+                if (subject.isEmpty()) {
+                    return ResponseEntity.badRequest()
+                            .body(new responseDTO("ERROR", "La materia con ID " + dto.getSubjectId() + " no existe"));
+                }
             }
             
             service.create(dto);
@@ -91,11 +95,13 @@ public class TeacherController {
                         .body(new responseDTO("ERROR", errorMessage));
             }
 
-            // Verificar que la materia existe
-            Optional<subjects> subject = Isubjects.findById(dto.getSubjectId());
-            if (subject.isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(new responseDTO("ERROR", "La materia con ID " + dto.getSubjectId() + " no existe"));
+            // Verificar que la materia existe si subjectId > 0
+            if (dto.getSubjectId() > 0) {
+                Optional<subjects> subject = Isubjects.findById(dto.getSubjectId());
+                if (subject.isEmpty()) {
+                    return ResponseEntity.badRequest()
+                            .body(new responseDTO("ERROR", "La materia con ID " + dto.getSubjectId() + " no existe"));
+                }
             }
             
             service.update(id, dto);
@@ -111,8 +117,10 @@ public class TeacherController {
         try {
             service.delete(id);
             return ResponseEntity.ok(new responseDTO("OK", "Docente eliminado correctamente"));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest().body(new responseDTO("ERROR", "No se puede eliminar el docente porque tiene dependencias"));
         } catch (Exception e) {
-            return ResponseEntity.status(404).body(new responseDTO("ERROR", "No se pudo eliminar el docente"));
+            return ResponseEntity.badRequest().body(new responseDTO("ERROR", e.getMessage()));
         }
     }
 }

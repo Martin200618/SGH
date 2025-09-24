@@ -1,4 +1,4 @@
-import { SUBJECT_END_POINTS } from "../constants/Enpoint";
+import { SUBJECT_END_POINTS } from "../constants/Endpoint";
 
 export interface Subject {
   subjectId: number;
@@ -13,6 +13,14 @@ export interface CreateSubjectRequest {
 export interface UpdateSubjectRequest {
   subjectName: string;
 }
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("token");
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
 
 export const getAllSubjects = async (): Promise<Subject[]> => {
   try {
@@ -40,9 +48,7 @@ export const createSubject = async (subject: CreateSubjectRequest): Promise<Subj
   try {
     const response = await fetch(SUBJECT_END_POINTS, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(subject),
     });
 
@@ -63,9 +69,7 @@ export const updateSubject = async (id: number, subject: UpdateSubjectRequest): 
   try {
     const response = await fetch(`${SUBJECT_END_POINTS}/${id}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(subject),
     });
 
@@ -86,9 +90,7 @@ export const deleteSubject = async (id: number): Promise<void> => {
   try {
     const response = await fetch(`${SUBJECT_END_POINTS}/${id}`, {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {

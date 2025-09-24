@@ -14,6 +14,14 @@ public class schedule {
     @JoinColumn(name = "courseId", nullable = false)
     private courses courseId;
 
+    @ManyToOne
+    @JoinColumn(name = "teacherId", nullable = false)
+    private teachers teacherId;
+
+    @ManyToOne
+    @JoinColumn(name = "subjectId", nullable = false)
+    private subjects subjectId;
+
     private String day;
     private LocalTime startTime;
     private LocalTime endTime;
@@ -22,9 +30,11 @@ public class schedule {
 
     public schedule() {}
 
-    public schedule(Integer id, courses courseId, String day, LocalTime startTime, LocalTime endTime, String scheduleName) {
+    public schedule(Integer id, courses courseId, teachers teacherId, subjects subjectId, String day, LocalTime startTime, LocalTime endTime, String scheduleName) {
         this.id = id;
         this.courseId = courseId;
+        this.teacherId = teacherId;
+        this.subjectId = subjectId;
         this.day = day;
         this.startTime = startTime;
         this.endTime = endTime;
@@ -45,6 +55,22 @@ public class schedule {
 
     public void setCourseId(courses courseId) {
         this.courseId = courseId;
+    }
+
+    public teachers getTeacherId() {
+        return teacherId;
+    }
+
+    public void setTeacherId(teachers teacherId) {
+        this.teacherId = teacherId;
+    }
+
+    public subjects getSubjectId() {
+        return subjectId;
+    }
+
+    public void setSubjectId(subjects subjectId) {
+        this.subjectId = subjectId;
     }
 
     public String getDay() {

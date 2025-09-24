@@ -7,8 +7,8 @@ public class ValidationUtils {
             if (courseName.length() < 1) {
                 throw new IllegalArgumentException("El nombre del curso debe tener al menos 1 caracter");
             }
-            if (courseName.length() > 2) {
-                throw new IllegalArgumentException("El nombre del curso debe tener máximo 2 caracteres");
+            if (courseName.length() > 50) {
+                throw new IllegalArgumentException("El nombre del curso debe tener máximo 50 caracteres");
             }
         }
     }

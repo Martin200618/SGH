@@ -35,15 +35,21 @@ public class ScheduleService implements IScheduleService {
     private final TeacherSubjectRepository teacherSubjectRepo;
 
     private boolean isTeacherAvailable(Integer teacherId, String day, LocalTime start, LocalTime end) {
-        List<TeacherAvailability> disponibilidad = availabilityRepo.findByTeacher_IdAndDay(teacherId, Days.valueOf(day));
-        return disponibilidad.stream().anyMatch(d -> {
-            // Verificar si el horario solicitado está cubierto por AM o PM
-            boolean coveredByAM = d.getAmStart() != null && d.getAmEnd() != null &&
-                    !start.isBefore(d.getAmStart()) && !end.isAfter(d.getAmEnd());
-            boolean coveredByPM = d.getPmStart() != null && d.getPmEnd() != null &&
-                    !start.isBefore(d.getPmStart()) && !end.isAfter(d.getPmEnd());
-            return coveredByAM || coveredByPM;
-        });
+        try {
+            Days dayEnum = Days.valueOf(day);
+            List<TeacherAvailability> disponibilidad = availabilityRepo.findByTeacher_IdAndDay(teacherId, dayEnum);
+            return disponibilidad.stream().anyMatch(d -> {
+                // Verificar si el horario solicitado está cubierto por AM o PM
+                boolean coveredByAM = d.getAmStart() != null && d.getAmEnd() != null &&
+                        !start.isBefore(d.getAmStart()) && !end.isAfter(d.getAmEnd());
+                boolean coveredByPM = d.getPmStart() != null && d.getPmEnd() != null &&
+                        !start.isBefore(d.getPmStart()) && !end.isAfter(d.getPmEnd());
+                return coveredByAM || coveredByPM;
+            });
+        } catch (IllegalArgumentException e) {
+            // Día no válido (ej. Sábado o Domingo)
+            return false;
+        }
     }
 
     @Transactional
@@ -126,10 +132,18 @@ public class ScheduleService implements IScheduleService {
         return scheduleRepo.findAll().stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    @Transactional
+    @Override
+    public void deleteByDay(String day) {
+        scheduleRepo.deleteByDay(day);
+    }
+
     private schedule toEntity(ScheduleDTO dto) {
         schedule s = new schedule();
         s.setId(dto.getId());
         s.setCourseId(courseRepo.findById(dto.getCourseId()).orElseThrow());
+        s.setTeacherId(teacherRepo.findById(dto.getTeacherId()).orElseThrow());
+        s.setSubjectId(subjectRepo.findById(dto.getSubjectId()).orElseThrow());
         s.setDay(dto.getDay());
         s.setStartTime(dto.getStartTimeAsLocalTime());
         s.setEndTime(dto.getEndTimeAsLocalTime());
@@ -141,18 +155,14 @@ public class ScheduleService implements IScheduleService {
         ScheduleDTO dto = new ScheduleDTO();
         dto.setId(s.getId());
         dto.setCourseId(s.getCourseId().getId());
+        dto.setTeacherId(s.getTeacherId().getId());
+        dto.setSubjectId(s.getSubjectId().getId());
         dto.setDay(s.getDay());
         dto.setStartTimeFromLocalTime(s.getStartTime());
         dto.setEndTimeFromLocalTime(s.getEndTime());
         dto.setScheduleName(s.getScheduleName());
-
-        // Usar la información del TeacherSubject del curso (que es la fuente de verdad)
-        if (s.getCourseId().getTeacherSubject() != null) {
-            dto.setTeacherId(s.getCourseId().getTeacherSubject().getTeacher().getId());
-            dto.setSubjectId(s.getCourseId().getTeacherSubject().getSubject().getId());
-            dto.setTeacherName(s.getCourseId().getTeacherSubject().getTeacher().getTeacherName());
-            dto.setSubjectName(s.getCourseId().getTeacherSubject().getSubject().getSubjectName());
-        }
+        dto.setTeacherName(s.getTeacherId().getTeacherName());
+        dto.setSubjectName(s.getSubjectId().getSubjectName());
 
         return dto;
     }

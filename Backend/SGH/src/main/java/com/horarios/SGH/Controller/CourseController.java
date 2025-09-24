@@ -6,6 +6,8 @@ import com.horarios.SGH.Service.CourseService;
 import com.horarios.SGH.Service.ValidationUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -84,7 +86,14 @@ public class CourseController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable int id) {
-        service.delete(id);
+    public ResponseEntity<responseDTO> delete(@PathVariable int id) {
+        try {
+            service.delete(id);
+            return ResponseEntity.ok(new responseDTO("OK", "Curso eliminado correctamente"));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest().body(new responseDTO("ERROR", "No se puede eliminar el curso porque tiene dependencias"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new responseDTO("ERROR", "Curso no encontrado"));
+        }
     }
 }

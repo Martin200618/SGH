@@ -9,4 +9,5 @@ public interface IScheduleService {
     List<ScheduleDTO> getByCourse(Integer courseId);
     List<ScheduleDTO> getByTeacher(Integer teacherId);
     List<ScheduleDTO> getAll();
+    void deleteByDay(String day);
 }

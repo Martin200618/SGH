@@ -53,7 +53,7 @@ public class SecurityConfig {
                 // Endpoints públicos (sin autenticación)
                 .requestMatchers(
                     "/auth/**",          // login y register
-                    "/teachers",         // GET profesores para dashboard
+                    "/teachers/**",      // CRUD completo de profesores
                     "/subjects/**",      // materias para dashboard
                     "/courses/**",       // cursos para dashboard
                     "/schedules/**",     // horarios para dashboard
@@ -61,15 +61,13 @@ public class SecurityConfig {
                     "/schedules-crud/by-teacher/**", // ver horarios de profesor
                     "/schedules-crud",   // ver todos los horarios
                     "/schedules/history", // historial de horarios
+                    "/availability/**",  // disponibilidad de profesores
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/v3/api-docs/**",
                     "/api-docs/**"
                 ).permitAll()
-                // Métodos que requieren autenticación
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/teachers/**").authenticated()
-                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/teachers/**").authenticated()
-                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/teachers/**").authenticated()
+                // Solo subjects y courses requieren autenticación para operaciones de escritura
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/subjects/**").authenticated()
                 .requestMatchers(org.springframework.http.HttpMethod.PUT, "/subjects/**").authenticated()
                 .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/subjects/**").authenticated()

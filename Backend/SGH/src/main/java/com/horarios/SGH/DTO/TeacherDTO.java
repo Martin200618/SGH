@@ -15,6 +15,9 @@ public class TeacherDTO {
     private int teacherId;
     private int subjectId;
 
+    // Información de disponibilidad
+    private String availabilitySummary;
+
     public TeacherDTO() {}
 
     public TeacherDTO(String teacherName) {
@@ -46,5 +49,13 @@ public class TeacherDTO {
 
     public void setSubjectId(int subjectId) {
         this.subjectId = subjectId;
+    }
+
+    public String getAvailabilitySummary() {
+        return availabilitySummary;
+    }
+
+    public void setAvailabilitySummary(String availabilitySummary) {
+        this.availabilitySummary = availabilitySummary;
     }
 }

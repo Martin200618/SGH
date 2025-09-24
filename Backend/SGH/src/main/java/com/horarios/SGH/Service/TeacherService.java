@@ -1,6 +1,7 @@
 package com.horarios.SGH.Service;
 
 import com.horarios.SGH.DTO.TeacherDTO;
+import com.horarios.SGH.Model.TeacherAvailability;
 import com.horarios.SGH.Model.TeacherSubject;
 import com.horarios.SGH.Model.subjects;
 import com.horarios.SGH.Model.teachers;
@@ -59,6 +60,19 @@ public class TeacherService implements ITeacherService {
             } else {
                 dto.setSubjectId(0);
             }
+
+            // Resumen de disponibilidad
+            List<TeacherAvailability> availabilities = availabilityRepo.findByTeacher_Id(t.getId());
+            if (!availabilities.isEmpty()) {
+                String days = availabilities.stream()
+                    .filter(a -> a.hasValidSchedule())
+                    .map(a -> a.getDay().toString())
+                    .collect(Collectors.joining(", "));
+                dto.setAvailabilitySummary(days.isEmpty() ? "Sin disponibilidad" : days);
+            } else {
+                dto.setAvailabilitySummary("Sin disponibilidad");
+            }
+
             return dto;
         }).collect(Collectors.toList());
     }
@@ -78,6 +92,19 @@ public class TeacherService implements ITeacherService {
             } else {
                 dto.setSubjectId(0);
             }
+
+            // Resumen de disponibilidad
+            List<TeacherAvailability> availabilities = availabilityRepo.findByTeacher_Id(t.getId());
+            if (!availabilities.isEmpty()) {
+                String days = availabilities.stream()
+                    .filter(a -> a.hasValidSchedule())
+                    .map(a -> a.getDay().toString())
+                    .collect(Collectors.joining(", "));
+                dto.setAvailabilitySummary(days.isEmpty() ? "Sin disponibilidad" : days);
+            } else {
+                dto.setAvailabilitySummary("Sin disponibilidad");
+            }
+
             return dto;
         }).orElse(null);
     }

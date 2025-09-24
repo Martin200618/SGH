@@ -12,6 +12,7 @@ export default function SubjectPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,6 +42,7 @@ export default function SubjectPage() {
 
   const handleSaveSubject = async (subjectData: Omit<Subject, 'subjectId'>) => {
     try {
+      setErrorMessage('');
       if (editingSubject) {
         // Editar materia existente
         await updateSubject(editingSubject.subjectId, { subjectName: subjectData.subjectName });
@@ -59,8 +61,9 @@ export default function SubjectPage() {
       }));
       setSubjects(subjectsWithCount);
       setIsModalOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving subject:", error);
+      setErrorMessage(error.message || 'Error al guardar la materia');
     }
   };
 
@@ -78,8 +81,14 @@ export default function SubjectPage() {
   };
 
   const handleDeleteSubject = async (id: number) => {
+    const subject = subjects.find(s => s.subjectId === id);
+    if (subject && (subject.profesoresAsociados || 0) > 0) {
+      setErrorMessage('No se puede eliminar una materia que tiene profesores asociados');
+      return;
+    }
     if (window.confirm('¿Estás seguro de que deseas eliminar esta materia?')) {
       try {
+        setErrorMessage('');
         await deleteSubject(id);
         // Refetch y recalcular
         const [subjectsData, teachersData] = await Promise.all([
@@ -91,8 +100,9 @@ export default function SubjectPage() {
           profesoresAsociados: teachersData.filter(teacher => teacher.subjectId === subject.subjectId).length
         }));
         setSubjects(subjectsWithCount);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error deleting subject:", error);
+        setErrorMessage(error.message || 'Error al eliminar la materia');
       }
     }
   };
@@ -105,6 +115,11 @@ export default function SubjectPage() {
         <div className="my-6">
           <SearchBar />
         </div>
+        {errorMessage && (
+          <div className="my-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {errorMessage}
+          </div>
+        )}
         {/* Aquí va el contenido específico de la página de materias */}
         <div className="my-6">
           <SubjectTable

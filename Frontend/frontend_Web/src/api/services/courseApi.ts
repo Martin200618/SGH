@@ -1,4 +1,4 @@
-import { COURSE_END_POINTS } from "../constants/Enpoint";
+import { COURSE_END_POINTS } from "../constants/Endpoint";
 
 export interface Course {
   courseId: number;
@@ -24,6 +24,15 @@ export interface UpdateCourseRequest {
   subjectId?: number;
   gradeDirectorId?: number;
 }
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("token");
+  console.log("Token en localStorage:", token);
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
 
 export const getAllCourses = async (): Promise<Course[]> => {
   try {
@@ -51,9 +60,7 @@ export const createCourse = async (course: CreateCourseRequest): Promise<Course>
   try {
     const response = await fetch(COURSE_END_POINTS, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(course),
     });
 
@@ -72,16 +79,19 @@ export const createCourse = async (course: CreateCourseRequest): Promise<Course>
 
 export const updateCourse = async (id: number, course: UpdateCourseRequest): Promise<Course> => {
   try {
+    console.log("Actualizando curso con ID:", id, "Datos:", course);
+    const headers = getAuthHeaders();
+    console.log("Headers enviados:", headers);
     const response = await fetch(`${COURSE_END_POINTS}/${id}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(course),
     });
+    console.log("Respuesta del servidor:", response.status, response.statusText);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
+      console.log("Datos de error:", errorData);
       throw new Error(errorData?.message || `Error ${response.status}`);
     }
 
@@ -95,15 +105,19 @@ export const updateCourse = async (id: number, course: UpdateCourseRequest): Pro
 
 export const deleteCourse = async (id: number): Promise<void> => {
   try {
+    console.log("Eliminando curso con ID:", id);
+    const headers = getAuthHeaders();
+    console.log("Headers enviados:", headers);
     const response = await fetch(`${COURSE_END_POINTS}/${id}`, {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
     });
+    console.log("Respuesta del servidor:", response.status, response.statusText);
 
     if (!response.ok) {
-      throw new Error(`Error ${response.status}`);
+      const errorData = await response.json().catch(() => null);
+      console.log("Datos de error:", errorData);
+      throw new Error(errorData?.message || `Error ${response.status}`);
     }
   } catch (error: any) {
     console.error("Error al eliminar curso:", error.message);

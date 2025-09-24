@@ -2,6 +2,8 @@ package com.horarios.SGH.Service;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -77,5 +79,17 @@ public class AuthService implements IAuthService {
 
         String token = jwtTokenProvider.generateToken(req.getUsername());
         return new LoginResponseDTO(token);
+    }
+
+    public users getProfile() {
+        // Como /auth/** es público, no hay autenticación, así que devolvemos el primer usuario
+        return repo.findAll().stream().findFirst().orElseThrow(() -> new RuntimeException("No hay usuarios"));
+    }
+
+    public void updateUserName(String newName) {
+        // Actualizamos el primer usuario
+        users user = repo.findAll().stream().findFirst().orElseThrow(() -> new RuntimeException("No hay usuarios"));
+        user.setUserName(newName);
+        repo.save(user);
     }
 }

@@ -15,6 +15,7 @@ interface SubjectModalProps {
 
 const SubjectModal: React.FC<SubjectModalProps> = ({ isOpen, onClose, onSave, subject }) => {
   const [subjectName, setSubjectName] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (subject) {
@@ -25,10 +26,26 @@ const SubjectModal: React.FC<SubjectModalProps> = ({ isOpen, onClose, onSave, su
   }, [subject, isOpen]);
 
   const handleSave = () => {
-    if (subjectName.trim()) {
-      onSave({ subjectName: subjectName.trim() });
-      onClose();
+    const trimmedName = subjectName.trim();
+    if (!trimmedName) {
+      setError('El nombre de la materia es requerido');
+      return;
     }
+    if (trimmedName.length < 5) {
+      setError('El nombre debe tener al menos 5 caracteres');
+      return;
+    }
+    if (trimmedName.length > 20) {
+      setError('El nombre debe tener máximo 20 caracteres');
+      return;
+    }
+    if (/\d/.test(trimmedName)) {
+      setError('El nombre no puede contener números');
+      return;
+    }
+    setError('');
+    onSave({ subjectName: trimmedName });
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -70,10 +87,16 @@ const SubjectModal: React.FC<SubjectModalProps> = ({ isOpen, onClose, onSave, su
             <input
               type="text"
               value={subjectName}
-              onChange={(e) => setSubjectName(e.target.value)}
+              onChange={(e) => {
+                setSubjectName(e.target.value);
+                if (error) setError('');
+              }}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               placeholder="Ingresa el nombre de la materia"
             />
+            {error && (
+              <p className="text-red-500 text-sm mt-1">{error}</p>
+            )}
           </div>
         </div>
 

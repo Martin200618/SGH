@@ -10,7 +10,11 @@ import java.util.List;
 public interface IScheduleRepository extends JpaRepository<schedule, Integer> {
     List<schedule> findByScheduleName(String scheduleName);
 
-    @Query("SELECT s FROM schedule s WHERE s.courseId.id = :courseId")
+    @Query("SELECT s FROM schedule s " +
+           "LEFT JOIN FETCH s.teacherId t " +
+           "LEFT JOIN FETCH s.subjectId sub " +
+           "LEFT JOIN FETCH s.courseId c " +
+           "WHERE s.courseId.id = :courseId")
     List<schedule> findByCourseId(@Param("courseId") Integer courseId);
 
     @Query("SELECT s FROM schedule s " +
@@ -19,4 +23,7 @@ public interface IScheduleRepository extends JpaRepository<schedule, Integer> {
            "JOIN ts.teacher t " +
            "WHERE t.id = :teacherId")
     List<schedule> findByTeacherId(@Param("teacherId") Integer teacherId);
+
+    @Query("DELETE FROM schedule s WHERE s.day = :day")
+    void deleteByDay(@Param("day") String day);
 }

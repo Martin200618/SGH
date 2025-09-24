@@ -27,11 +27,11 @@ public class ScheduleCrudController {
     @Operation(
         summary = "Crear horarios manualmente",
         description = "Permite crear horarios específicos asignando profesores y materias a cursos. " +
-                     "Los campos teacherId y subjectId son OBLIGATORIOS. " +
-                     "La combinación teacherId + subjectId debe existir en TeacherSubject. " +
-                     "Un curso puede tener múltiples profesores en diferentes horarios, pero cada profesor " +
-                     "debe estar asociado únicamente a una materia. " +
-                     "Las horas se envían como strings en formato 'HH:mm'."
+                      "Los campos teacherId y subjectId son OBLIGATORIOS. " +
+                      "La combinación teacherId + subjectId debe existir en TeacherSubject. " +
+                      "Un curso puede tener múltiples profesores en diferentes horarios, pero cada profesor " +
+                      "debe estar asociado únicamente a una materia. " +
+                      "Las horas se envían como strings en formato 'HH:mm'."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Horarios creados exitosamente"),
@@ -39,7 +39,8 @@ public class ScheduleCrudController {
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     public List<ScheduleDTO> createSchedule(
-            @Parameter(description = "Lista de horarios a crear", required = true)
+            @Parameter(description = "Lista de horarios a crear", required = true,
+                       example = "[{\"courseId\": 12, \"teacherId\": 14, \"subjectId\": 8, \"day\": \"Lunes\", \"startTime\": \"06:06\", \"endTime\": \"07:00\", \"scheduleName\": \"Matemáticas - Juan Pérez\"}]")
             @RequestBody List<ScheduleDTO> assignments,
             Authentication auth) {
         return scheduleService.createSchedule(assignments, auth.getName());
@@ -94,5 +95,22 @@ public class ScheduleCrudController {
     @GetMapping
     public List<ScheduleDTO> getAll() {
         return scheduleService.getAll();
+    }
+
+    @DeleteMapping("/by-day/{day}")
+    @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR')")
+    @Operation(
+        summary = "Eliminar horarios por día",
+        description = "Elimina todos los horarios asignados a un día específico"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Horarios eliminados exitosamente"),
+        @ApiResponse(responseCode = "403", description = "No autorizado"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
+    public void deleteByDay(
+            @Parameter(description = "Día a eliminar", example = "Sábado")
+            @PathVariable String day) {
+        scheduleService.deleteByDay(day);
     }
 }
