@@ -229,39 +229,40 @@ export default function SchedulePage() {
     const availabilities = await getTeacherAvailability(selectedTeacher);
     const dayAvailability = availabilities.find(a => a.day === selectedDay);
     if (!dayAvailability) {
-      setErrorMessage('El profesor no tiene disponibilidad en ese día');
+      setErrorMessage('Este maestro no tiene disponibilidad en ese día');
       return;
     }
     const inAM = dayAvailability.amStart && dayAvailability.amEnd && startTime >= dayAvailability.amStart && endTime <= dayAvailability.amEnd;
     const inPM = dayAvailability.pmStart && dayAvailability.pmEnd && startTime >= dayAvailability.pmStart && endTime <= dayAvailability.pmEnd;
     if (!inAM && !inPM) {
-      setErrorMessage('El profesor no tiene disponibilidad en ese horario');
+      setErrorMessage('Este maestro no tiene disponibilidad en ese horario');
       return;
+    }
+
+    // Validar que no haya conflictos en el mismo curso
+    const courseSchedulesOnDay = allSchedules.filter(s => s.courseId === selectedCourse && s.day === selectedDay);
+    const newStartMinutes = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1]);
+    const newEndMinutes = parseInt(endTime.split(':')[0]) * 60 + parseInt(endTime.split(':')[1]);
+    for (const existing of courseSchedulesOnDay) {
+      const existingStart = parseInt(existing.startTime.split(':')[0]) * 60 + parseInt(existing.startTime.split(':')[1]);
+      const existingEnd = parseInt(existing.endTime.split(':')[0]) * 60 + parseInt(existing.endTime.split(':')[1]);
+      if (newStartMinutes < existingEnd && existingStart < newEndMinutes) {
+        setErrorMessage('Ese bloque de tiempo ya está ocupado en este curso.');
+        return;
+      }
     }
 
     // Validar que el profesor no tenga conflictos de horario en el mismo día
     const teacherSchedulesOnDay = allSchedules.filter(s => s.teacherId === selectedTeacher && s.day === selectedDay);
-    const newStartMinutes = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1]);
-    const newEndMinutes = parseInt(endTime.split(':')[0]) * 60 + parseInt(endTime.split(':')[1]);
     for (const existing of teacherSchedulesOnDay) {
       const existingStart = parseInt(existing.startTime.split(':')[0]) * 60 + parseInt(existing.startTime.split(':')[1]);
       const existingEnd = parseInt(existing.endTime.split(':')[0]) * 60 + parseInt(existing.endTime.split(':')[1]);
       if (newStartMinutes < existingEnd && existingStart < newEndMinutes) {
-        setErrorMessage('El profesor ya tiene un horario asignado que se solapa con este.');
+        setErrorMessage('Este maestro ya tiene ocupado ese bloque de tiempo en otro curso.');
         return;
       }
     }
 
-    // Validar que no haya conflictos globales de horario en el mismo día (ningún profesor ocupado en ese tiempo)
-    const schedulesOnDay = allSchedules.filter(s => s.day === selectedDay);
-    for (const existing of schedulesOnDay) {
-      const existingStart = parseInt(existing.startTime.split(':')[0]) * 60 + parseInt(existing.startTime.split(':')[1]);
-      const existingEnd = parseInt(existing.endTime.split(':')[0]) * 60 + parseInt(existing.endTime.split(':')[1]);
-      if (newStartMinutes < existingEnd && existingStart < newEndMinutes) {
-        setErrorMessage('Ya hay un maestro asignado en este tiempo para este día.');
-        return;
-      }
-    }
 
     const newEntry: Omit<Schedule, 'id'> = {
       courseId: selectedCourse,
