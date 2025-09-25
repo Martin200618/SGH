@@ -87,6 +87,44 @@ export const createSchedule = async (schedule: Omit<Schedule, 'id'>): Promise<Sc
   }
 };
 
+export const updateSchedule = async (id: number, schedule: Schedule): Promise<void> => {
+  try {
+    const headers = getAuthHeaders();
+    console.log("Headers being sent:", headers);
+    console.log("Token:", Cookies.get("token"));
+    const response = await fetch(`${SCHEDULE_CRUD_END_POINTS}/${id}`, {
+      method: "PUT",
+      headers: headers,
+      body: JSON.stringify(schedule),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || `Error ${response.status}`);
+    }
+  } catch (error: any) {
+    console.error("Error al actualizar horario:", error.message);
+    throw error;
+  }
+};
+
+export const deleteSchedule = async (id: number): Promise<void> => {
+  try {
+    const response = await fetch(`${SCHEDULE_CRUD_END_POINTS}/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || `Error ${response.status}`);
+    }
+  } catch (error: any) {
+    console.error("Error al eliminar horario:", error.message);
+    throw error;
+  }
+};
+
 export interface ScheduleHistory {
   id: number;
   executedBy: string;

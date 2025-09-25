@@ -1,15 +1,21 @@
 package com.horarios.SGH.Controller;
 
 import com.horarios.SGH.DTO.ScheduleDTO;
+import com.horarios.SGH.DTO.responseDTO;
 import com.horarios.SGH.Service.ScheduleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -95,6 +101,71 @@ public class ScheduleCrudController {
     @GetMapping
     public List<ScheduleDTO> getAll() {
         return scheduleService.getAll();
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR')")
+    @Operation(
+        summary = "Actualizar horario",
+        description = "Actualiza un horario específico por su ID"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Horario actualizado exitosamente"),
+        @ApiResponse(responseCode = "400", description = "Error de validación"),
+        @ApiResponse(responseCode = "404", description = "Horario no encontrado"),
+        @ApiResponse(responseCode = "403", description = "No autorizado"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
+    public ResponseEntity<responseDTO> updateSchedule(
+            @PathVariable int id,
+            @Valid @RequestBody ScheduleDTO dto,
+            BindingResult bindingResult,
+            Authentication auth) {
+        try {
+            // Validar errores de validación del DTO
+            if (bindingResult.hasErrors()) {
+                String errorMessage = bindingResult.getFieldErrors().stream()
+                        .map(error -> error.getDefaultMessage())
+                        .findFirst()
+                        .orElse("Error de validación");
+                return ResponseEntity.badRequest()
+                        .body(new responseDTO("ERROR", errorMessage));
+            }
+
+            // Validaciones adicionales pueden agregarse aquí si es necesario
+
+            scheduleService.updateSchedule(id, dto, auth.getName());
+            return ResponseEntity.ok(new responseDTO("OK", "Horario actualizado correctamente"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new responseDTO("ERROR", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','COORDINADOR')")
+    @Operation(
+        summary = "Eliminar horario",
+        description = "Elimina un horario específico por su ID"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Horario eliminado exitosamente"),
+        @ApiResponse(responseCode = "404", description = "Horario no encontrado"),
+        @ApiResponse(responseCode = "403", description = "No autorizado"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
+    public ResponseEntity<responseDTO> deleteSchedule(
+            @PathVariable int id,
+            Authentication auth) {
+        try {
+            scheduleService.deleteSchedule(id, auth.getName());
+            return ResponseEntity.ok(new responseDTO("OK", "Horario eliminado correctamente"));
+        } catch (DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest().body(new responseDTO("ERROR", "No se puede eliminar el horario porque tiene dependencias"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new responseDTO("ERROR", e.getMessage()));
+        }
     }
 
     @DeleteMapping("/by-day/{day}")
