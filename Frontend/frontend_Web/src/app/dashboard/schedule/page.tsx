@@ -54,6 +54,7 @@ export default function SchedulePage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [teacherAvailabilities, setTeacherAvailabilities] = useState<{ [key: number]: any[] }>({});
   const [selectedCourse, setSelectedCourse] = useState<number | ''>('');
   const [selectedDay, setSelectedDay] = useState<string>('');
   const [selectedSubject, setSelectedSubject] = useState<number | ''>('');
@@ -95,6 +96,27 @@ export default function SchedulePage() {
     };
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (selectedSubject) {
+      const teachersForSubject = teachers.filter(t => t.subjectId === selectedSubject);
+      const loadAvailabilities = async () => {
+        const availabilities: { [key: number]: any[] } = {};
+        for (const teacher of teachersForSubject) {
+          try {
+            const avails = await getTeacherAvailability(teacher.teacherId);
+            availabilities[teacher.teacherId] = avails;
+          } catch (error) {
+            console.error(`Error loading availability for teacher ${teacher.teacherId}:`, error);
+          }
+        }
+        setTeacherAvailabilities(availabilities);
+      };
+      loadAvailabilities();
+    } else {
+      setTeacherAvailabilities({});
+    }
+  }, [selectedSubject, teachers]);
 
   const loadHistory = async () => {
     try {
@@ -236,7 +258,36 @@ export default function SchedulePage() {
     }
   };
 
-  const filteredTeachers = teachers.filter(t => selectedSubject && t.subjectId === selectedSubject);
+  const filteredTeachers = teachers.filter(t => {
+    if (!selectedSubject || t.subjectId !== selectedSubject) return false;
+    if (!selectedDay) return true;
+    const avails = teacherAvailabilities[t.teacherId];
+    if (!avails) return false;
+    return avails.some(a => a.day === selectedDay);
+  });
+
+  const formatAvailability = (avails: any[], selectedDay: string) => {
+    if (!avails || avails.length === 0) return 'No hay disponibilidad registrada';
+    if (!selectedDay) {
+      return avails.map(avail => {
+        const am = avail.amStart && avail.amEnd ? `AM: ${avail.amStart}-${avail.amEnd}` : '';
+        const pm = avail.pmStart && avail.pmEnd ? `PM: ${avail.pmStart}-${avail.pmEnd}` : '';
+        const times = [am, pm].filter(Boolean).join(', ');
+        return `${avail.day}: ${times}`;
+      }).join('; ');
+    }
+    const dayAvail = avails.find(a => a.day === selectedDay);
+    if (!dayAvail) return 'No tiene disponibilidad en este día';
+    const parts = [];
+    if (dayAvail.amStart && dayAvail.amEnd) {
+      parts.push(`AM: ${dayAvail.amStart}-${dayAvail.amEnd}`);
+    }
+    if (dayAvail.pmStart && dayAvail.pmEnd) {
+      parts.push(`PM: ${dayAvail.pmStart}-${dayAvail.pmEnd}`);
+    }
+    if (parts.length === 0) return 'No tiene horarios disponibles en este día';
+    return `${selectedDay}: ${parts.join(', ')}`;
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -477,6 +528,17 @@ export default function SchedulePage() {
                       </option>
                     ))}
                   </select>
+                  {selectedTeacher && teacherAvailabilities[selectedTeacher] && selectedDay && (() => {
+                    const dayAvail = teacherAvailabilities[selectedTeacher].find(a => a.day === selectedDay);
+                    if (!dayAvail) return <p className="text-red-600 text-sm mt-1">No tiene disponibilidad en este día</p>;
+                    return (
+                      <div className="text-red-600 text-sm mt-1">
+                        Disponibilidad:
+                        {dayAvail.amStart && dayAvail.amEnd && <div>AM: {dayAvail.amStart}-{dayAvail.amEnd}</div>}
+                        {dayAvail.pmStart && dayAvail.pmEnd && <div>PM: {dayAvail.pmStart}-{dayAvail.pmEnd}</div>}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Hora Inicio</label>
