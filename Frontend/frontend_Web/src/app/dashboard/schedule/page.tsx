@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, FileSpreadsheet, Image } from "lucide-react";
+import { FileText, FileSpreadsheet, Image, Edit, Trash2, X, BookOpen, Calendar, Book, User, Clock } from "lucide-react";
 import SearchBar from "@/components/dashboard/SearchBar";
 import HeaderSchedule from "@/components/schedule/scheduleCourse/HeaderSchedule";
-import { getScheduleHistory, generateSchedule, ScheduleHistory, Schedule, createSchedule, getSchedulesByCourse, getAllSchedules } from "@/api/services/scheduleApi";
+import { getScheduleHistory, generateSchedule, ScheduleHistory, Schedule, createSchedule, getSchedulesByCourse, getAllSchedules, updateSchedule, deleteSchedule } from "@/api/services/scheduleApi";
 import { getAllCourses, Course } from "@/api/services/courseApi";
 import { getAllSubjects, Subject } from "@/api/services/subjectApi";
 import { getAllTeachers, Teacher, getTeacherAvailability } from "@/api/services/teacherApi";
@@ -65,6 +65,9 @@ export default function SchedulePage() {
   const [scheduleEntries, setScheduleEntries] = useState<Schedule[]>([]);
   const [courseSchedules, setCourseSchedules] = useState<Schedule[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [successMessage, setSuccessMessage] = useState<string>('');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
 
   const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
 
@@ -288,6 +291,136 @@ export default function SchedulePage() {
     }
   };
 
+  const handleEditSchedule = (schedule: Schedule) => {
+    setEditingSchedule(schedule);
+    setSelectedCourse(schedule.courseId);
+    setSelectedDay(schedule.day);
+    setSelectedSubject(schedule.subjectId || '');
+    setSelectedTeacher(schedule.teacherId || '');
+    setStartTime(schedule.startTime);
+    setEndTime(schedule.endTime);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateSchedule = async () => {
+    if (!editingSchedule) return;
+    setErrorMessage('');
+    setSuccessMessage('');
+    if (!selectedCourse || !selectedDay || !selectedSubject || !selectedTeacher || !startTime || !endTime) {
+      setErrorMessage('Por favor complete todos los campos');
+      return;
+    }
+
+    // Validar que no se programe durante los descansos
+    const startHour = parseInt(startTime.split(':')[0]);
+    const startMinute = parseInt(startTime.split(':')[1]);
+    const endHour = parseInt(endTime.split(':')[0]);
+    const endMinute = parseInt(endTime.split(':')[1]);
+
+    const startMinutes = startHour * 60 + startMinute;
+    const endMinutes = endHour * 60 + endMinute;
+
+    const breakStart = 9 * 60;
+    const breakEnd = 9 * 60 + 30;
+    const lunchStart = 12 * 60;
+    const lunchEnd = 13 * 60;
+
+    if ((startMinutes < breakEnd && endMinutes > breakStart) ||
+        (startMinutes < lunchEnd && endMinutes > lunchStart)) {
+      setErrorMessage('No se puede programar clases durante los tiempos de descanso (9:00-9:30 AM) o almuerzo (12:00-1:00 PM)');
+      return;
+    }
+
+    const course = courses.find(c => c.courseId === selectedCourse);
+    const subject = subjects.find(s => s.subjectId === selectedSubject);
+    const teacher = teachers.find(t => t.teacherId === selectedTeacher);
+    if (!course || !subject || !teacher) return;
+
+    const availabilities = await getTeacherAvailability(selectedTeacher);
+    const dayAvailability = availabilities.find(a => a.day === selectedDay);
+    if (!dayAvailability) {
+      setErrorMessage('Este maestro no tiene disponibilidad en ese día');
+      return;
+    }
+    const inAM = dayAvailability.amStart && dayAvailability.amEnd && startTime >= dayAvailability.amStart && endTime <= dayAvailability.amEnd;
+    const inPM = dayAvailability.pmStart && dayAvailability.pmEnd && startTime >= dayAvailability.pmStart && endTime <= dayAvailability.pmEnd;
+    if (!inAM && !inPM) {
+      setErrorMessage('Este maestro no tiene disponibilidad en ese horario');
+      return;
+    }
+
+    const courseSchedulesOnDay = allSchedules.filter(s => s.courseId === selectedCourse && s.day === selectedDay && s.id !== editingSchedule.id);
+    const newStartMinutes = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1]);
+    const newEndMinutes = parseInt(endTime.split(':')[0]) * 60 + parseInt(endTime.split(':')[1]);
+    for (const existing of courseSchedulesOnDay) {
+      const existingStart = parseInt(existing.startTime.split(':')[0]) * 60 + parseInt(existing.startTime.split(':')[1]);
+      const existingEnd = parseInt(existing.endTime.split(':')[0]) * 60 + parseInt(existing.endTime.split(':')[1]);
+      if (newStartMinutes < existingEnd && existingStart < newEndMinutes) {
+        setErrorMessage('Ese bloque de tiempo ya está ocupado en este curso.');
+        return;
+      }
+    }
+
+    const teacherSchedulesOnDay = allSchedules.filter(s => s.teacherId === selectedTeacher && s.day === selectedDay && s.id !== editingSchedule.id);
+    for (const existing of teacherSchedulesOnDay) {
+      const existingStart = parseInt(existing.startTime.split(':')[0]) * 60 + parseInt(existing.startTime.split(':')[1]);
+      const existingEnd = parseInt(existing.endTime.split(':')[0]) * 60 + parseInt(existing.endTime.split(':')[1]);
+      if (newStartMinutes < existingEnd && existingStart < newEndMinutes) {
+        setErrorMessage('Este maestro ya tiene ocupado ese bloque de tiempo en otro curso.');
+        return;
+      }
+    }
+
+    const updatedSchedule: Schedule = {
+      ...editingSchedule,
+      courseId: selectedCourse,
+      teacherId: selectedTeacher,
+      subjectId: selectedSubject,
+      day: selectedDay,
+      startTime,
+      endTime,
+      scheduleName: `${course.courseName} - ${subject.subjectName}`,
+      teacherName: teacher.teacherName,
+      subjectName: subject.subjectName,
+    };
+
+    try {
+      console.log("Updating schedule:", editingSchedule.id, updatedSchedule);
+      await updateSchedule(editingSchedule.id, updatedSchedule);
+      const updatedSchedules = await getAllSchedules();
+      setAllSchedules(updatedSchedules);
+      await loadCourseSchedules(selectedCourse);
+      setIsEditModalOpen(false);
+      setEditingSchedule(null);
+      clearForm();
+      setSuccessMessage('Horario actualizado correctamente');
+    } catch (error: any) {
+      console.error("Error updating schedule:", error);
+      setErrorMessage(error.message || "Error al actualizar el horario");
+      setSuccessMessage('');
+    }
+  };
+
+  const handleDeleteSchedule = async (schedule: Schedule) => {
+    if (!confirm(`¿Estás seguro de que quieres eliminar el horario "${schedule.scheduleName}"?`)) {
+      return;
+    }
+
+    try {
+      setErrorMessage('');
+      setSuccessMessage('');
+      await deleteSchedule(schedule.id);
+      const updatedSchedules = await getAllSchedules();
+      setAllSchedules(updatedSchedules);
+      await loadCourseSchedules(schedule.courseId);
+      setSuccessMessage('Horario eliminado correctamente');
+    } catch (error: any) {
+      console.error("Error deleting schedule:", error);
+      setErrorMessage(error.message || "Error al eliminar el horario");
+      setSuccessMessage('');
+    }
+  };
+
   const filteredTeachers = teachers.filter(t => {
     if (!selectedSubject || t.subjectId !== selectedSubject) return false;
     if (!selectedDay) return true;
@@ -411,7 +544,7 @@ export default function SchedulePage() {
                     return (
                       <td
                         key={day}
-                        className={`px-6 py-4 text-center text-sm ${
+                        className={`px-6 py-4 text-center text-sm relative group ${
                           isLunch
                             ? 'bg-orange-100 text-orange-800 font-medium'
                             : isBreak
@@ -421,7 +554,29 @@ export default function SchedulePage() {
                                 : 'text-gray-400'
                         }`}
                       >
-                        {content}
+                        <div className="relative">
+                          <div className="group-hover:opacity-0 transition-opacity duration-200">
+                            {content}
+                          </div>
+                          {schedule && (
+                            <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <button
+                                onClick={() => handleEditSchedule(schedule)}
+                                className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
+                              >
+                                <Edit className="w-3 h-3 mr-1" />
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSchedule(schedule)}
+                                className="inline-flex items-center px-3 py-1 text-xs font-medium text-red-600 bg-red-100 rounded hover:bg-red-200 transition-colors"
+                              >
+                                <Trash2 className="w-3 h-3 mr-1" />
+                                Eliminar
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </td>
                     );
                   })}
@@ -452,6 +607,17 @@ export default function SchedulePage() {
               className="absolute top-0 bottom-0 right-0 px-4 py-3"
             >
               <span className="text-red-500">×</span>
+            </button>
+          </div>
+        )}
+        {successMessage && (
+          <div className="my-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+            <span className="block sm:inline">{successMessage}</span>
+            <button
+              onClick={() => setSuccessMessage('')}
+              className="absolute top-0 bottom-0 right-0 px-4 py-3"
+            >
+              <span className="text-green-500">×</span>
             </button>
           </div>
         )}
@@ -616,6 +782,188 @@ export default function SchedulePage() {
                 </button>
               </div>
             </div>
+
+            {/* Modal de Edición */}
+            {isEditModalOpen && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                  {/* Header */}
+                  <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <Edit className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-900">Editar Horario</h2>
+                        <p className="text-sm text-gray-600">Modifica la información del horario</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setIsEditModalOpen(false);
+                        setEditingSchedule(null);
+                        clearForm();
+                      }}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <X className="w-6 h-6 text-gray-500" />
+                    </button>
+                  </div>
+
+                  {/* Form */}
+                  <div className="p-6 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Curso */}
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-semibold text-gray-700">
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          Curso
+                        </label>
+                        <select
+                          value={selectedCourse}
+                          onChange={(e) => setSelectedCourse(Number(e.target.value) || '')}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        >
+                          <option value="">Seleccionar Curso</option>
+                          {courses.map((course) => (
+                            <option key={course.courseId} value={course.courseId}>
+                              {course.courseName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Día */}
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-semibold text-gray-700">
+                          <Calendar className="w-4 h-4 mr-2" />
+                          Día
+                        </label>
+                        <select
+                          value={selectedDay}
+                          onChange={(e) => setSelectedDay(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        >
+                          <option value="">Seleccionar Día</option>
+                          {days.map((day) => (
+                            <option key={day} value={day}>
+                              {day}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Materia */}
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-semibold text-gray-700">
+                          <Book className="w-4 h-4 mr-2" />
+                          Materia
+                        </label>
+                        <select
+                          value={selectedSubject}
+                          onChange={(e) => {
+                            setSelectedSubject(Number(e.target.value) || '');
+                            setSelectedTeacher('');
+                          }}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        >
+                          <option value="">Seleccionar Materia</option>
+                          {subjects.map((subject) => (
+                            <option key={subject.subjectId} value={subject.subjectId}>
+                              {subject.subjectName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Profesor */}
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-semibold text-gray-700">
+                          <User className="w-4 h-4 mr-2" />
+                          Profesor
+                        </label>
+                        <select
+                          value={selectedTeacher}
+                          onChange={(e) => setSelectedTeacher(Number(e.target.value) || '')}
+                          disabled={!selectedSubject}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        >
+                          <option value="">Seleccionar Profesor</option>
+                          {filteredTeachers.map((teacher) => (
+                            <option key={teacher.teacherId} value={teacher.teacherId}>
+                              {teacher.teacherName}
+                            </option>
+                          ))}
+                        </select>
+                        {selectedTeacher && teacherAvailabilities[selectedTeacher] && selectedDay && (() => {
+                          const dayAvail = teacherAvailabilities[selectedTeacher].find(a => a.day === selectedDay);
+                          if (!dayAvail) return <p className="text-red-600 text-sm mt-1">No tiene disponibilidad en este día</p>;
+                          return (
+                            <div className="text-red-600 text-sm mt-1">
+                              Disponibilidad:
+                              {dayAvail.amStart && dayAvail.amEnd && <div>AM: {dayAvail.amStart}-{dayAvail.amEnd}</div>}
+                              {dayAvail.pmStart && dayAvail.pmEnd && <div>PM: {dayAvail.pmStart}-{dayAvail.pmEnd}</div>}
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Hora Inicio */}
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-semibold text-gray-700">
+                          <Clock className="w-4 h-4 mr-2" />
+                          Hora Inicio
+                        </label>
+                        <input
+                          type="time"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+
+                      {/* Hora Fin */}
+                      <div className="space-y-2">
+                        <label className="flex items-center text-sm font-semibold text-gray-700">
+                          <Clock className="w-4 h-4 mr-2" />
+                          Hora Fin
+                        </label>
+                        <input
+                          type="time"
+                          value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {errorMessage && (
+                      <p className="text-red-500 text-sm">{errorMessage}</p>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+                    <button
+                      onClick={() => {
+                        setIsEditModalOpen(false);
+                        setEditingSchedule(null);
+                        clearForm();
+                      }}
+                      className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleUpdateSchedule}
+                      className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
+                    >
+                      Actualizar Horario
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Ver Horario de Curso */}
             <div className="my-6">

@@ -134,6 +134,75 @@ public class ScheduleService implements IScheduleService {
 
     @Transactional
     @Override
+    public ScheduleDTO updateSchedule(Integer id, ScheduleDTO dto, String executedBy) {
+        System.out.println("Updating schedule with id: " + id + ", dto: " + dto);
+        schedule existing = scheduleRepo.findById(id).orElseThrow(() -> new RuntimeException("Horario no encontrado"));
+
+        courses course = courseRepo.findById(dto.getCourseId()).orElseThrow();
+
+        teachers teacher;
+        subjects subject;
+
+        // VALIDACIÓN: Si se especifica teacherId, subjectId es obligatorio y viceversa
+        if (dto.getTeacherId() != null && dto.getSubjectId() == null) {
+            throw new RuntimeException("Si especificas teacherId, también debes especificar subjectId.");
+        }
+        if (dto.getSubjectId() != null && dto.getTeacherId() == null) {
+            throw new RuntimeException("Si especificas subjectId, también debes especificar teacherId.");
+        }
+
+        // Si se especifica teacherId y subjectId, usar esos valores
+        if (dto.getTeacherId() != null && dto.getSubjectId() != null) {
+            teacher = teacherRepo.findById(dto.getTeacherId()).orElseThrow();
+            subject = subjectRepo.findById(dto.getSubjectId()).orElseThrow();
+
+            // VALIDACIÓN: Un profesor solo puede estar asociado a UNA materia
+            List<TeacherSubject> teacherAssociations = teacherSubjectRepo.findByTeacher_Id(teacher.getId());
+            if (teacherAssociations.size() > 1) {
+                throw new RuntimeException("El profesor " + teacher.getTeacherName() +
+                    " está asociado a múltiples materias. Cada profesor debe estar asociado únicamente a una materia.");
+            }
+
+            // Validar que el profesor esté vinculado específicamente a esta materia
+            boolean isLinkedToSubject = teacherSubjectRepo.existsByTeacher_IdAndSubject_Id(teacher.getId(), subject.getId());
+            if (!isLinkedToSubject) {
+                throw new RuntimeException("El profesor " + teacher.getTeacherName() +
+                    " no está vinculado a la materia " + subject.getSubjectName() +
+                    ". Debe existir una relación TeacherSubject entre ellos.");
+            }
+        } else {
+            // Si no se especifica profesor/materia, es un error
+            throw new RuntimeException("Debes especificar tanto teacherId como subjectId para actualizar el horario.");
+        }
+
+        if (!isTeacherAvailable(teacher.getId(), dto.getDay(), dto.getStartTimeAsLocalTime(), dto.getEndTimeAsLocalTime())) {
+            throw new RuntimeException("El profesor " + teacher.getTeacherName() + " no está disponible el " + dto.getDay());
+        }
+
+        // Actualizar la entidad existente
+        existing.setCourseId(course);
+        existing.setTeacherId(teacher);
+        existing.setSubjectId(subject);
+        existing.setDay(dto.getDay());
+        existing.setStartTime(dto.getStartTimeAsLocalTime());
+        existing.setEndTime(dto.getEndTimeAsLocalTime());
+        existing.setScheduleName(dto.getScheduleName());
+
+        schedule saved = scheduleRepo.save(existing);
+        return toDTO(saved);
+    }
+
+    @Transactional
+    @Override
+    public void deleteSchedule(Integer id, String executedBy) {
+        if (!scheduleRepo.existsById(id)) {
+            throw new RuntimeException("Horario no encontrado");
+        }
+        scheduleRepo.deleteById(id);
+    }
+
+    @Transactional
+    @Override
     public void deleteByDay(String day) {
         scheduleRepo.deleteByDay(day);
     }
