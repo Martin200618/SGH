@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { FileText, FileSpreadsheet, Image } from "lucide-react";
 import SearchBar from "@/components/dashboard/SearchBar";
 import HeaderSchedule from "@/components/schedule/scheduleCourse/HeaderSchedule";
-import { getScheduleHistory, generateSchedule, ScheduleHistory, Schedule, createSchedule, getSchedulesByCourse } from "@/api/services/scheduleApi";
+import { getScheduleHistory, generateSchedule, ScheduleHistory, Schedule, createSchedule, getSchedulesByCourse, getAllSchedules } from "@/api/services/scheduleApi";
 import { getAllCourses, Course } from "@/api/services/courseApi";
 import { getAllSubjects, Subject } from "@/api/services/subjectApi";
 import { getAllTeachers, Teacher, getTeacherAvailability } from "@/api/services/teacherApi";
@@ -54,6 +54,7 @@ export default function SchedulePage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [allSchedules, setAllSchedules] = useState<Schedule[]>([]);
   const [teacherAvailabilities, setTeacherAvailabilities] = useState<{ [key: number]: any[] }>({});
   const [selectedCourse, setSelectedCourse] = useState<number | ''>('');
   const [selectedDay, setSelectedDay] = useState<string>('');
@@ -82,14 +83,16 @@ export default function SchedulePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [coursesData, subjectsData, teachersData] = await Promise.all([
+        const [coursesData, subjectsData, teachersData, schedulesData] = await Promise.all([
           getAllCourses(),
           getAllSubjects(),
-          getAllTeachers()
+          getAllTeachers(),
+          getAllSchedules()
         ]);
         setCourses(coursesData);
         setSubjects(subjectsData);
         setTeachers(teachersData);
+        setAllSchedules(schedulesData);
       } catch (error) {
         console.error("Error loading data:", error);
       }
@@ -236,6 +239,30 @@ export default function SchedulePage() {
       return;
     }
 
+    // Validar que el profesor no tenga conflictos de horario en el mismo día
+    const teacherSchedulesOnDay = allSchedules.filter(s => s.teacherId === selectedTeacher && s.day === selectedDay);
+    const newStartMinutes = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1]);
+    const newEndMinutes = parseInt(endTime.split(':')[0]) * 60 + parseInt(endTime.split(':')[1]);
+    for (const existing of teacherSchedulesOnDay) {
+      const existingStart = parseInt(existing.startTime.split(':')[0]) * 60 + parseInt(existing.startTime.split(':')[1]);
+      const existingEnd = parseInt(existing.endTime.split(':')[0]) * 60 + parseInt(existing.endTime.split(':')[1]);
+      if (newStartMinutes < existingEnd && existingStart < newEndMinutes) {
+        setErrorMessage('El profesor ya tiene un horario asignado que se solapa con este.');
+        return;
+      }
+    }
+
+    // Validar que no haya conflictos globales de horario en el mismo día (ningún profesor ocupado en ese tiempo)
+    const schedulesOnDay = allSchedules.filter(s => s.day === selectedDay);
+    for (const existing of schedulesOnDay) {
+      const existingStart = parseInt(existing.startTime.split(':')[0]) * 60 + parseInt(existing.startTime.split(':')[1]);
+      const existingEnd = parseInt(existing.endTime.split(':')[0]) * 60 + parseInt(existing.endTime.split(':')[1]);
+      if (newStartMinutes < existingEnd && existingStart < newEndMinutes) {
+        setErrorMessage('Ya hay un maestro asignado en este tiempo para este día.');
+        return;
+      }
+    }
+
     const newEntry: Omit<Schedule, 'id'> = {
       courseId: selectedCourse,
       teacherId: selectedTeacher,
@@ -250,6 +277,8 @@ export default function SchedulePage() {
 
     try {
       await createSchedule(newEntry);
+      const updatedSchedules = await getAllSchedules();
+      setAllSchedules(updatedSchedules);
       await loadCourseSchedules(selectedCourse);
       clearForm();
     } catch (error) {
