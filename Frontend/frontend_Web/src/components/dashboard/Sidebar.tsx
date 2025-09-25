@@ -83,7 +83,7 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="w-60 bg-white shadow-lg border-r border-gray-100 flex flex-col">
+      <aside className="fixed top-0 left-0 h-screen w-60 bg-white shadow-lg border-r border-gray-100 flex flex-col overflow-y-auto">
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
             <img src="/logo.png" alt="Logo" className="w-12 h-auto" />
