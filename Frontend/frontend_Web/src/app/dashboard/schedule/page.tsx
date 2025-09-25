@@ -11,6 +11,13 @@ import { getAllSubjects, Subject } from "@/api/services/subjectApi";
 import { getAllTeachers, Teacher, getTeacherAvailability } from "@/api/services/teacherApi";
 import Cookies from 'js-cookie';
 
+const calculateEndTime = (startTime: string): string => {
+  const [hours, minutes] = startTime.split(':').map(Number);
+  const endHours = hours + 1;
+  const endMinutes = minutes;
+  return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+};
+
 const exportSchedule = async (format: 'pdf' | 'excel' | 'image', type: 'course' | 'teacher' | 'all', id?: number) => {
   let url = `http://localhost:8085/schedules/${format}`;
   if (type === 'course' && id) {
@@ -61,13 +68,14 @@ export default function SchedulePage() {
   const [selectedSubject, setSelectedSubject] = useState<number | ''>('');
   const [selectedTeacher, setSelectedTeacher] = useState<number | ''>('');
   const [startTime, setStartTime] = useState<string>('');
-  const [endTime, setEndTime] = useState<string>('');
   const [scheduleEntries, setScheduleEntries] = useState<Schedule[]>([]);
   const [courseSchedules, setCourseSchedules] = useState<Schedule[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [scheduleToDelete, setScheduleToDelete] = useState<Schedule | null>(null);
 
   const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
 
@@ -189,15 +197,16 @@ export default function SchedulePage() {
     setSelectedSubject('');
     setSelectedTeacher('');
     setStartTime('');
-    setEndTime('');
   };
 
   const addToSchedule = async () => {
     setErrorMessage('');
-    if (!selectedCourse || !selectedDay || !selectedSubject || !selectedTeacher || !startTime || !endTime) {
+    if (!selectedCourse || !selectedDay || !selectedSubject || !selectedTeacher || !startTime) {
       setErrorMessage('Por favor complete todos los campos');
       return;
     }
+
+    const endTime = calculateEndTime(startTime);
 
     // Validar que no se programe durante los descansos
     const startHour = parseInt(startTime.split(':')[0]);
@@ -223,6 +232,7 @@ export default function SchedulePage() {
       setErrorMessage('No se puede programar clases durante los tiempos de descanso (9:00-9:30 AM) o almuerzo (12:00-1:00 PM)');
       return;
     }
+
     const course = courses.find(c => c.courseId === selectedCourse);
     const subject = subjects.find(s => s.subjectId === selectedSubject);
     const teacher = teachers.find(t => t.teacherId === selectedTeacher);
@@ -298,7 +308,6 @@ export default function SchedulePage() {
     setSelectedSubject(schedule.subjectId || '');
     setSelectedTeacher(schedule.teacherId || '');
     setStartTime(schedule.startTime);
-    setEndTime(schedule.endTime);
     setIsEditModalOpen(true);
   };
 
@@ -306,10 +315,12 @@ export default function SchedulePage() {
     if (!editingSchedule) return;
     setErrorMessage('');
     setSuccessMessage('');
-    if (!selectedCourse || !selectedDay || !selectedSubject || !selectedTeacher || !startTime || !endTime) {
+    if (!selectedCourse || !selectedDay || !selectedSubject || !selectedTeacher || !startTime) {
       setErrorMessage('Por favor complete todos los campos');
       return;
     }
+
+    const endTime = calculateEndTime(startTime);
 
     // Validar que no se programe durante los descansos
     const startHour = parseInt(startTime.split(':')[0]);
@@ -330,6 +341,7 @@ export default function SchedulePage() {
       setErrorMessage('No se puede programar clases durante los tiempos de descanso (9:00-9:30 AM) o almuerzo (12:00-1:00 PM)');
       return;
     }
+
 
     const course = courses.find(c => c.courseId === selectedCourse);
     const subject = subjects.find(s => s.subjectId === selectedSubject);
@@ -401,24 +413,29 @@ export default function SchedulePage() {
     }
   };
 
-  const handleDeleteSchedule = async (schedule: Schedule) => {
-    if (!confirm(`¿Estás seguro de que quieres eliminar el horario "${schedule.scheduleName}"?`)) {
-      return;
-    }
+  const handleDeleteSchedule = (schedule: Schedule) => {
+    setScheduleToDelete(schedule);
+    setIsConfirmModalOpen(true);
+  };
 
-    try {
-      setErrorMessage('');
-      setSuccessMessage('');
-      await deleteSchedule(schedule.id);
-      const updatedSchedules = await getAllSchedules();
-      setAllSchedules(updatedSchedules);
-      await loadCourseSchedules(schedule.courseId);
-      setSuccessMessage('Horario eliminado correctamente');
-    } catch (error: any) {
-      console.error("Error deleting schedule:", error);
-      setErrorMessage(error.message || "Error al eliminar el horario");
-      setSuccessMessage('');
+  const confirmDelete = async () => {
+    if (scheduleToDelete) {
+      try {
+        setErrorMessage('');
+        setSuccessMessage('');
+        await deleteSchedule(scheduleToDelete.id);
+        const updatedSchedules = await getAllSchedules();
+        setAllSchedules(updatedSchedules);
+        await loadCourseSchedules(scheduleToDelete.courseId);
+        setSuccessMessage('Horario eliminado correctamente');
+      } catch (error: any) {
+        console.error("Error deleting schedule:", error);
+        setErrorMessage(error.message || "Error al eliminar el horario");
+        setSuccessMessage('');
+      }
     }
+    setIsConfirmModalOpen(false);
+    setScheduleToDelete(null);
   };
 
   const filteredTeachers = teachers.filter(t => {
@@ -591,13 +608,35 @@ export default function SchedulePage() {
 
   return (
     <>
+      {isConfirmModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">Confirmar eliminación</h2>
+            <p className="mb-6">
+              ¿Estás seguro de que deseas eliminar el horario "{scheduleToDelete?.scheduleName}"? Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setIsConfirmModalOpen(false)}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main content */}
       <div className="flex-1 p-6">
         <HeaderSchedule />
 
-        <div className="my-6">
-          <SearchBar placeholder="Buscar por estado o mensaje..." onSearch={handleSearch} />
-        </div>
 
         {errorMessage && (
           <div className="my-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
@@ -757,15 +796,6 @@ export default function SchedulePage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Hora Fin</label>
-                  <input
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200"
-                  />
-                </div>
               </div>
               <div className="flex flex-wrap gap-4">
                 <button
@@ -782,6 +812,7 @@ export default function SchedulePage() {
                 </button>
               </div>
             </div>
+
 
             {/* Modal de Edición */}
             {isEditModalOpen && (
@@ -918,20 +949,6 @@ export default function SchedulePage() {
                           type="time"
                           value={startTime}
                           onChange={(e) => setStartTime(e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                        />
-                      </div>
-
-                      {/* Hora Fin */}
-                      <div className="space-y-2">
-                        <label className="flex items-center text-sm font-semibold text-gray-700">
-                          <Clock className="w-4 h-4 mr-2" />
-                          Hora Fin
-                        </label>
-                        <input
-                          type="time"
-                          value={endTime}
-                          onChange={(e) => setEndTime(e.target.value)}
                           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         />
                       </div>
