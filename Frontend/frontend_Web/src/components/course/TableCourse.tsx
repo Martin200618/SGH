@@ -16,6 +16,37 @@ interface TableCourseProps {
   onDelete: (id: number) => void;
 }
 
+const gradeMap: { [key: string]: string } = {
+  '1': 'Primero',
+  '2': 'Segundo',
+  '3': 'Tercero',
+  '4': 'Cuarto',
+  '5': 'Quinto',
+  '6': 'Sexto',
+  '7': 'Séptimo',
+  '8': 'Octavo',
+  '9': 'Noveno',
+  '10': 'Décimo',
+  '11': 'Undécimo',
+};
+
+const convertCourseName = (name: string): string => {
+  if (name.includes('-')) {
+    const parts = name.split('-');
+    const names = parts.map(part => {
+      const num = part.match(/\d+/)?.[0];
+      return num ? gradeMap[num] || 'Otro' : 'Otro';
+    });
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return names.join(' y ');
+    const last = names.pop();
+    return names.join('-') + ' y ' + last;
+  } else {
+    const num = name.match(/\d+/)?.[0];
+    return num ? gradeMap[num] || 'Otro' : 'Otro';
+  }
+};
+
 const TableCourse = ({ courses, onEdit, onDelete }: TableCourseProps) => {
   const handleEdit = (id: number) => {
     onEdit(id);
@@ -24,6 +55,19 @@ const TableCourse = ({ courses, onEdit, onDelete }: TableCourseProps) => {
   const handleDelete = (id: number) => {
     onDelete(id);
   };
+
+  const sortedCourses = [...courses].sort((a, b) => {
+    const matchA = a.courseName.match(/^([A-Za-z]+)(\d+)/);
+    const matchB = b.courseName.match(/^([A-Za-z]+)(\d+)/);
+    const prefixA = matchA ? matchA[1] : '';
+    const prefixB = matchB ? matchB[1] : '';
+    const numA = matchA ? parseInt(matchA[2]) : 0;
+    const numB = matchB ? parseInt(matchB[2]) : 0;
+
+    if (prefixA < prefixB) return -1;
+    if (prefixA > prefixB) return 1;
+    return numA - numB;
+  });
 
   return (
     <div className="p-6 bg-gray-50 min-h">
@@ -47,10 +91,21 @@ const TableCourse = ({ courses, onEdit, onDelete }: TableCourseProps) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {courses.map((course) => {
+              {sortedCourses.map((course) => {
                 const gradeNumber = course.courseName.match(/\d+/)?.[0];
-                const gradeName = gradeNumber === '1' ? 'Primero' : gradeNumber === '2' ? 'Segundo' : gradeNumber === '3' ? 'Tercero' : 'Otro';
-                const gradeColor = gradeNumber === '1' ? 'text-green-600 bg-green-100' : gradeNumber === '2' ? 'text-yellow-600 bg-yellow-100' : gradeNumber === '3' ? 'text-purple-600 bg-purple-100' : 'text-blue-600 bg-blue-100';
+                const gradeName = convertCourseName(course.courseName);
+                const gradeColor = gradeNumber === '1' ? 'text-green-600 bg-green-100' :
+                  gradeNumber === '2' ? 'text-yellow-600 bg-yellow-100' :
+                  gradeNumber === '3' ? 'text-purple-600 bg-purple-100' :
+                  gradeNumber === '4' ? 'text-red-600 bg-red-100' :
+                  gradeNumber === '5' ? 'text-indigo-600 bg-indigo-100' :
+                  gradeNumber === '6' ? 'text-pink-600 bg-pink-100' :
+                  gradeNumber === '7' ? 'text-teal-600 bg-teal-100' :
+                  gradeNumber === '8' ? 'text-orange-600 bg-orange-100' :
+                  gradeNumber === '9' ? 'text-cyan-600 bg-cyan-100' :
+                  gradeNumber === '10' ? 'text-lime-600 bg-lime-100' :
+                  gradeNumber === '11' ? 'text-amber-600 bg-amber-100' :
+                  'text-blue-600 bg-blue-100';
 
                 return (
                   <tr key={course.courseId} className="hover:bg-gray-50 transition-colors">
@@ -90,8 +145,8 @@ const TableCourse = ({ courses, onEdit, onDelete }: TableCourseProps) => {
             </tbody>
           </table>
         </div>
-        
-        {courses.length === 0 && (
+
+        {sortedCourses.length === 0 && (
           <div className="px-6 py-12 text-center">
             <p className="text-gray-500 text-sm">No hay cursos registrados</p>
           </div>

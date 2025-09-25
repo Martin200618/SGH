@@ -98,7 +98,7 @@ public class CourseController {
             service.delete(id);
             return ResponseEntity.ok(new responseDTO("OK", "Curso eliminado correctamente"));
         } catch (DataIntegrityViolationException e) {
-            return ResponseEntity.badRequest().body(new responseDTO("ERROR", "No se puede eliminar el curso porque tiene dependencias"));
+            return ResponseEntity.badRequest().body(new responseDTO("ERROR", "No se puede eliminar el curso porque está asociado a un horario"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new responseDTO("ERROR", "Curso no encontrado"));
         }
