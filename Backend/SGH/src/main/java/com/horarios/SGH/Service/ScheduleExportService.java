@@ -176,38 +176,72 @@ public class ScheduleExportService implements IScheduleExportService {
         Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.WHITE);
         Font cellFont = FontFactory.getFont(FontFactory.HELVETICA, 10, BaseColor.BLACK);
 
-        document.add(new Paragraph("📘 Horario del Profesor", titleFont));
+        // Obtener nombre del profesor
+        String teacherName = "";
+        if (!horarios.isEmpty() && horarios.get(0).getTeacherId() != null) {
+            teacherName = horarios.get(0).getTeacherId().getTeacherName();
+        }
+        document.add(new Paragraph("👨‍🏫 Horario del Profesor: " + teacherName, titleFont));
         document.add(Chunk.NEWLINE);
 
-        PdfPTable table = new PdfPTable(6);
+        // Generar tiempos únicos
+        List<String> times = generateTimes(horarios);
+        String[] days = {"Lunes", "Martes", "Miércoles", "Jueves", "Viernes"};
+
+        PdfPTable table = new PdfPTable(days.length + 1);
         table.setWidthPercentage(100);
-        table.setWidths(new float[]{2f, 2f, 1.5f, 2f, 2f, 2f});
+        float[] columnWidths = new float[days.length + 1];
+        columnWidths[0] = 1.5f; // Tiempo
+        for (int i = 1; i < columnWidths.length; i++) {
+            columnWidths[i] = 2f;
+        }
+        table.setWidths(columnWidths);
 
         BaseColor headerBg = new BaseColor(60, 120, 180);
-        String[] headers = {"Curso", "Materia", "Día", "Inicio", "Fin", "Bloque"};
 
-        for (String h : headers) {
-            PdfPCell cell = new PdfPCell(new Phrase(h, headerFont));
-            cell.setBackgroundColor(headerBg);
-            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-            table.addCell(cell);
+        // Header: Tiempo + días
+        PdfPCell timeHeader = new PdfPCell(new Phrase("Tiempo", headerFont));
+        timeHeader.setBackgroundColor(headerBg);
+        timeHeader.setHorizontalAlignment(Element.ALIGN_CENTER);
+        table.addCell(timeHeader);
+
+        for (String day : days) {
+            PdfPCell dayHeader = new PdfPCell(new Phrase(day, headerFont));
+            dayHeader.setBackgroundColor(headerBg);
+            dayHeader.setHorizontalAlignment(Element.ALIGN_CENTER);
+            table.addCell(dayHeader);
         }
 
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
-        for (schedule s : horarios) {
-            String curso = s.getCourseId().getCourseName();
-            String materia = "";
-            if (s.getCourseId().getTeacherSubject() != null) {
-                materia = s.getCourseId().getTeacherSubject().getSubject().getSubjectName();
-            }
+        for (String time : times) {
+            // Celda de tiempo
+            PdfPCell timeCell = new PdfPCell(new Phrase(time, cellFont));
+            timeCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            table.addCell(timeCell);
 
-            table.addCell(new Phrase(curso, cellFont));
-            table.addCell(new Phrase(materia, cellFont));
-            table.addCell(new Phrase(s.getDay(), cellFont));
-            table.addCell(new Phrase(s.getStartTime().format(timeFormatter), cellFont));
-            table.addCell(new Phrase(s.getEndTime().format(timeFormatter), cellFont));
-            table.addCell(new Phrase(s.getScheduleName(), cellFont));
+            for (String day : days) {
+                schedule s = getScheduleForTimeAndDay(horarios, time, day);
+                String content = "";
+                if (time.equals("9:00 AM - 9:30 AM")) {
+                    content = "Descanso";
+                } else if (time.equals("12:00 PM - 1:00 PM")) {
+                    content = "Almuerzo";
+                } else if (s != null) {
+                    String materia = s.getSubjectId() != null ? s.getSubjectId().getSubjectName() : "";
+                    String curso = s.getCourseId() != null ? s.getCourseId().getCourseName() : "";
+                    content = materia + "/" + curso;
+                }
+
+                PdfPCell contentCell = new PdfPCell(new Phrase(content, cellFont));
+                contentCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                if (time.equals("9:00 AM - 9:30 AM")) {
+                    contentCell.setBackgroundColor(new BaseColor(255, 255, 204)); // Amarillo claro para descanso
+                } else if (time.equals("12:00 PM - 1:00 PM")) {
+                    contentCell.setBackgroundColor(new BaseColor(255, 255, 153)); // Amarillo claro para almuerzo
+                }
+                table.addCell(contentCell);
+            }
         }
 
         document.add(table);
@@ -281,36 +315,56 @@ public class ScheduleExportService implements IScheduleExportService {
         headerFont.setBold(true);
         headerStyle.setFont(headerFont);
 
-        Row headerRow = sheet.createRow(0);
-        String[] headers = {"Curso", "Materia", "Día", "Inicio", "Fin", "Bloque"};
+        // Obtener nombre del profesor
+        String teacherName = "";
+        if (!horarios.isEmpty() && horarios.get(0).getTeacherId() != null) {
+            teacherName = horarios.get(0).getTeacherId().getTeacherName();
+        }
 
-        for (int i = 0; i < headers.length; i++) {
-            Cell cell = headerRow.createCell(i);
-            cell.setCellValue(headers[i]);
+        // Agregar título
+        Row titleRow = sheet.createRow(0);
+        Cell titleCell = titleRow.createCell(0);
+        titleCell.setCellValue("Horario del Profesor: " + teacherName);
+        titleCell.setCellStyle(headerStyle);
+        sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 5));
+
+        // Generar tiempos
+        List<String> times = generateTimes(horarios);
+        String[] days = {"Lunes", "Martes", "Miércoles", "Jueves", "Viernes"};
+
+        // Header: Tiempo + días
+        Row headerRow = sheet.createRow(2);
+        headerRow.createCell(0).setCellValue("Tiempo");
+        for (int i = 0; i < days.length; i++) {
+            Cell cell = headerRow.createCell(i + 1);
+            cell.setCellValue(days[i]);
             cell.setCellStyle(headerStyle);
         }
 
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-
-        int rowIdx = 1;
-        for (schedule s : horarios) {
+        int rowIdx = 3;
+        for (String time : times) {
             Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(time);
 
-            String curso = s.getCourseId().getCourseName();
-            String materia = "";
-            if (s.getCourseId().getTeacherSubject() != null) {
-                materia = s.getCourseId().getTeacherSubject().getSubject().getSubjectName();
+            for (int i = 0; i < days.length; i++) {
+                String day = days[i];
+                schedule s = getScheduleForTimeAndDay(horarios, time, day);
+                String content = "";
+                if (time.equals("9:00 AM - 9:30 AM")) {
+                    content = "Descanso";
+                } else if (time.equals("12:00 PM - 1:00 PM")) {
+                    content = "Almuerzo";
+                } else if (s != null) {
+                    String materia = s.getSubjectId() != null ? s.getSubjectId().getSubjectName() : "";
+                    String curso = s.getCourseId() != null ? s.getCourseId().getCourseName() : "";
+                    content = materia + "/" + curso;
+                }
+                row.createCell(i + 1).setCellValue(content);
             }
-
-            row.createCell(0).setCellValue(curso);
-            row.createCell(1).setCellValue(materia);
-            row.createCell(2).setCellValue(s.getDay());
-            row.createCell(3).setCellValue(s.getStartTime().format(timeFormatter));
-            row.createCell(4).setCellValue(s.getEndTime().format(timeFormatter));
-            row.createCell(5).setCellValue(s.getScheduleName());
         }
 
-        for (int i = 0; i < headers.length; i++) {
+        // Auto-ajustar columnas
+        for (int i = 0; i <= days.length; i++) {
             sheet.autoSizeColumn(i);
         }
 
@@ -385,10 +439,20 @@ public class ScheduleExportService implements IScheduleExportService {
     public byte[] exportToImageByTeacher(Integer teacherId) throws Exception {
         List<schedule> horarios = scheduleRepository.findByTeacherId(teacherId);
 
-        int width = 1200;
-        int rowHeight = 30;
+        // Obtener nombre del profesor
+        String teacherName = "";
+        if (!horarios.isEmpty() && horarios.get(0).getTeacherId() != null) {
+            teacherName = horarios.get(0).getTeacherId().getTeacherName();
+        }
+
+        // Generar tiempos
+        List<String> times = generateTimes(horarios);
+        String[] days = {"Lunes", "Martes", "Miércoles", "Jueves", "Viernes"};
+
+        int width = 1400;
+        int rowHeight = 25;
         int padding = 40;
-        int height = padding + (horarios.size() + 2) * rowHeight;
+        int height = padding + (times.size() + 3) * rowHeight; // +3 para título y headers
 
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         java.awt.Graphics2D g = image.createGraphics();
@@ -398,34 +462,38 @@ public class ScheduleExportService implements IScheduleExportService {
 
         g.setColor(new java.awt.Color(30, 30, 30));
         g.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 18));
-        g.drawString("📘 Horario del Profesor", 20, padding);
+        g.drawString("👨‍🏫 Horario del Profesor: " + teacherName, 20, padding);
         int y = padding + rowHeight;
 
-        g.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 14));
-        String[] headers = {"Curso", "Materia", "Día", "Inicio", "Fin", "Bloque"};
-        int[] xPositions = {20, 200, 400, 520, 620, 720};
-
-        for (int i = 0; i < headers.length; i++) {
-            g.drawString(headers[i], xPositions[i], y);
+        // Headers
+        g.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 12));
+        int[] xPositions = {20, 150, 350, 550, 650, 750, 850, 950};
+        g.drawString("Tiempo", xPositions[0], y);
+        for (int i = 0; i < days.length; i++) {
+            g.drawString(days[i], xPositions[i + 1], y);
         }
 
         y += rowHeight;
-        g.setFont(new java.awt.Font("Arial", java.awt.Font.PLAIN, 13));
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+        g.setFont(new java.awt.Font("Arial", java.awt.Font.PLAIN, 11));
 
-        for (schedule s : horarios) {
-            String curso = s.getCourseId().getCourseName();
-            String materia = "";
-            if (s.getCourseId().getTeacherSubject() != null) {
-                materia = s.getCourseId().getTeacherSubject().getSubject().getSubjectName();
+        for (String time : times) {
+            g.drawString(time, xPositions[0], y);
+
+            for (int i = 0; i < days.length; i++) {
+                String day = days[i];
+                schedule s = getScheduleForTimeAndDay(horarios, time, day);
+                String content = "";
+                if (time.equals("9:00 AM - 9:30 AM")) {
+                    content = "Descanso";
+                } else if (time.equals("12:00 PM - 1:00 PM")) {
+                    content = "Almuerzo";
+                } else if (s != null) {
+                    String materia = s.getSubjectId() != null ? s.getSubjectId().getSubjectName() : "";
+                    String curso = s.getCourseId() != null ? s.getCourseId().getCourseName() : "";
+                    content = materia + "/" + curso;
+                }
+                g.drawString(content, xPositions[i + 1], y);
             }
-
-            g.drawString(curso, xPositions[0], y);
-            g.drawString(materia, xPositions[1], y);
-            g.drawString(s.getDay(), xPositions[2], y);
-            g.drawString(s.getStartTime().format(timeFormatter), xPositions[3], y);
-            g.drawString(s.getEndTime().format(timeFormatter), xPositions[4], y);
-            g.drawString(s.getScheduleName(), xPositions[5], y);
             y += rowHeight;
         }
 

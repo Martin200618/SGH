@@ -19,10 +19,10 @@ public interface IScheduleRepository extends JpaRepository<schedule, Integer> {
     List<schedule> findByCourseId(@Param("courseId") Integer courseId);
 
     @Query("SELECT s FROM schedule s " +
-           "JOIN s.courseId c " +
-           "JOIN c.teacherSubject ts " +
-           "JOIN ts.teacher t " +
-           "WHERE t.id = :teacherId")
+           "LEFT JOIN FETCH s.teacherId t " +
+           "LEFT JOIN FETCH s.subjectId sub " +
+           "LEFT JOIN FETCH s.courseId c " +
+           "WHERE s.teacherId.id = :teacherId")
     List<schedule> findByTeacherId(@Param("teacherId") Integer teacherId);
 
     @Query("DELETE FROM schedule s WHERE s.day = :day")
