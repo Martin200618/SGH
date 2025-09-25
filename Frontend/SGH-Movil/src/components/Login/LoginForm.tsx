@@ -3,14 +3,14 @@ import { View, TextInput, TouchableOpacity, Text, Image } from 'react-native';
 import { styles } from '../../styles/loginStyles';
 import { useAuth } from '../../context/AuthContext';
 import CustomAlert from './CustomAlert';
-import { useNavigation } from '@react-navigation/native';
-import { type NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PasswordInput } from './PasswordInput';
-import { RootStackParamList } from '../../navigation/types';
 
-export default function LoginForm() {
+interface LoginFormProps {
+  onLoginSuccess: () => void; 
+}
+
+export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const { login } = useAuth();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,17 +30,18 @@ export default function LoginForm() {
 
     setLoading(true);
     try {
+      // 🔹 Llamada al backend usando tu AuthContext
       await login({ username: email, password });
 
       setAlertTitle('¡Bienvenido!');
       setAlertMessage('Login exitoso');
       setAlertVisible(true);
 
+      // 🔹 Redirigir a Schedules después de un pequeño delay
       setTimeout(() => {
         setAlertVisible(false);
-        navigation.replace('Schedules');
-      }, 1500);
-
+        onLoginSuccess();
+      }, 1200);
     } catch {
       setAlertTitle('Error de autenticación');
       setAlertMessage('Credenciales inválidas');
@@ -54,7 +55,10 @@ export default function LoginForm() {
     <View style={styles.formContainer}>
       {/* Usuario */}
       <View style={styles.inputWrapper}>
-        <Image source={require('../../assets/images/user.png')} style={styles.inputIcon} />
+        <Image
+          source={require('../../assets/images/user.png')}
+          style={styles.inputIcon}
+        />
         <TextInput
           style={styles.input}
           placeholder="Usuario"
@@ -65,7 +69,7 @@ export default function LoginForm() {
         />
       </View>
 
-      {/* Contraseña optimizada */}
+      {/* Contraseña */}
       <PasswordInput value={password} onChange={setPassword} />
 
       {/* Botón login */}
@@ -80,7 +84,7 @@ export default function LoginForm() {
         </Text>
       </TouchableOpacity>
 
-      {/* Modal */}
+      {/* Modal de alerta */}
       <CustomAlert
         visible={alertVisible}
         title={alertTitle}
@@ -90,4 +94,3 @@ export default function LoginForm() {
     </View>
   );
 }
-  

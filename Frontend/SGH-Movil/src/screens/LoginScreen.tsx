@@ -1,10 +1,30 @@
 import React from 'react';
-import { ImageBackground, View, Image, KeyboardAvoidingView, Platform, ScrollView, Text } from 'react-native';
+import {
+  ImageBackground,
+  View,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import { styles } from '../styles/loginStyles';
 import LoginHeader from '../components/Login/LoginHeader';
 import LoginForm from '../components/Login/LoginForm';
+import { RootStackParamList } from '../navigation/AppNavigation';
+
+type LoginNavProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 export default function LoginScreen() {
+  const navigation = useNavigation<LoginNavProp>();
+
+  const handleLoginSuccess = () => {
+    navigation.replace('Schedules'); // 👈 ahora sí existe
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -15,10 +35,12 @@ export default function LoginScreen() {
         style={styles.backgroundImage}
         resizeMode="cover"
       >
-        {/* Overlay que no bloquea toques */}
         <View style={styles.darkOverlay} pointerEvents="none" />
 
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
           <LoginHeader />
 
           <View style={styles.mainContent}>
@@ -36,7 +58,7 @@ export default function LoginScreen() {
               <Text style={styles.loginTitle}>Inicio de sesión</Text>
             </View>
 
-            <LoginForm />
+            <LoginForm onLoginSuccess={handleLoginSuccess} />
           </View>
         </ScrollView>
       </ImageBackground>

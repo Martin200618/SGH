@@ -9,7 +9,6 @@ import { AuthProvider } from './src/context/AuthContext';
 function Main() {
   return (
     <SafeAreaProvider>
-      {/* Área segura para el StatusBar */}
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <StatusBar
           barStyle="light-content"
@@ -18,7 +17,6 @@ function Main() {
         />
       </SafeAreaView>
 
-      {/* Contenido de la app envuelto en AuthProvider */}
       <View style={styles.container}>
         <AuthProvider>
           <NavigationContainer>
@@ -32,7 +30,7 @@ function Main() {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: '#007BFF', // Color de fondo del StatusBar
+    backgroundColor: '#007BFF',
   },
   container: {
     flex: 1,
