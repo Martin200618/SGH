@@ -304,14 +304,22 @@ export default function SchedulePage() {
       timeSet.add(schedule.startTime);
     });
     // Always include break times
-    timeSet.add('08:00');
+    timeSet.add('09:00');
     timeSet.add('12:00');
     const sortedTimes = Array.from(timeSet).sort();
     const times: string[] = [];
     sortedTimes.forEach(startTime => {
       const [hours, minutes] = startTime.split(':').map(Number);
-      const endHours = hours + 1;
-      const endTime = `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      let endHours = hours;
+      let endMinutes = minutes;
+      if (startTime === '09:00') {
+        // Descanso de 30 minutos
+        endMinutes += 30;
+      } else {
+        // Clases de 1 hora
+        endHours += 1;
+      }
+      const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
       times.push(`${formatTime(startTime)} - ${formatTime(endTime)}`);
     });
     return times;
@@ -367,7 +375,7 @@ export default function SchedulePage() {
                   {days.map((day) => {
                     const schedule = getScheduleForTimeAndDay(schedules, time, day);
                     const isLunch = time === "12:00 PM - 1:00 PM";
-                    const isBreak = time === "8:00 AM - 9:00 AM";
+                    const isBreak = time === "9:00 AM - 9:30 AM";
                     const content = schedule ? `${schedule.teacherName || 'Profesor'}/${schedule.subjectName || 'Materia'}` : isLunch ? "Almuerzo" : isBreak ? "Descanso" : "";
 
                     return (
@@ -469,7 +477,11 @@ export default function SchedulePage() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Curso</label>
                   <select
                     value={selectedCourse}
-                    onChange={(e) => setSelectedCourse(Number(e.target.value) || '')}
+                    onChange={(e) => {
+                      const courseId = Number(e.target.value) || '';
+                      setSelectedCourse(courseId);
+                      if (courseId) loadCourseSchedules(courseId);
+                    }}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all duration-200"
                   >
                     <option value="">Seleccionar Curso</option>
