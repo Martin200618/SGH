@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { View, FlatList, ActivityIndicator, Image, Text } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { getAllSchedules } from '../api/services/scheduleCrudService';
@@ -25,12 +25,11 @@ export default function SchedulesScreen() {
   const pageSize = 5;
   const [loading, setLoading] = useState(false);
 
-  // Traer cursos
+  // 🔹 Traer cursos
   useEffect(() => {
     if (authLoading || !token) return;
     const fetchCourses = async () => {
       try {
-        console.log("🔑 Token usado en getAllCourses:", token);
         const data = await getAllCourses(token);
         setAllCourses(data);
       } catch (err) {
@@ -40,7 +39,7 @@ export default function SchedulesScreen() {
     fetchCourses();
   }, [token, authLoading]);
 
-  // Traer horarios y agrupar por courseId
+  // 🔹 Traer horarios y agrupar por courseId
   useEffect(() => {
     if (authLoading || !token) return;
     const fetchSchedules = async () => {
@@ -49,7 +48,7 @@ export default function SchedulesScreen() {
         const data = await getAllSchedules(token);
 
         const grouped: Record<number, ScheduleDTO[]> = {};
-        data.forEach((s) => {
+        (data ?? []).forEach((s) => {
           if (!grouped[s.courseId]) grouped[s.courseId] = [];
           grouped[s.courseId].push(s);
         });
@@ -70,7 +69,16 @@ export default function SchedulesScreen() {
     fetchSchedules();
   }, [token, authLoading]);
 
-  // Filtro solo por curso
+  // 🔹 Diccionario id → courseName
+  const courseNameById = useMemo(() => {
+    const map = new Map<number, string>();
+    allCourses.forEach((c) => {
+      if (c.courseName) map.set(c.courseId, c.courseName);
+    });
+    return map;
+  }, [allCourses]);
+
+  // 🔹 Filtro por nombre de curso
   useEffect(() => {
     const term = search.trim().toLowerCase();
     if (!term) {
@@ -79,12 +87,12 @@ export default function SchedulesScreen() {
       return;
     }
     const filtered = allSchedules.filter((c) => {
-      const courseName = allCourses.find((x) => x.id === c.courseId)?.courseName || '';
-      return courseName.toLowerCase().includes(term);
+      const name = courseNameById.get(c.courseId) ?? '';
+      return name.toLowerCase().includes(term);
     });
     setFilteredCourses(filtered);
     setCurrentPage(0);
-  }, [search, allSchedules, allCourses]);
+  }, [search, allSchedules, courseNameById]);
 
   const totalPages = Math.ceil(filteredCourses.length / pageSize);
   const paginatedData = filteredCourses.slice(
@@ -92,8 +100,9 @@ export default function SchedulesScreen() {
     (currentPage + 1) * pageSize
   );
 
+  // 🔹 Obtener nombre real del curso desde la BD
   const getCourseName = (courseId: number) => {
-    return allCourses.find((c) => c.id === courseId)?.courseName || `Curso ${courseId}`;
+    return courseNameById.get(courseId) ?? '';
   };
 
   return (
@@ -120,6 +129,11 @@ export default function SchedulesScreen() {
             renderItem={({ item }) => (
               <ScheduleCard course={item} getCourseName={getCourseName} />
             )}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>
+                No hay cursos ni horarios para mostrar.
+              </Text>
+            }
           />
           <Pagination
             currentPage={currentPage}

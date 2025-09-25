@@ -1,4 +1,5 @@
 export interface CourseDTO {
-  id: number;
-  courseName: string; 
+  courseId: number;              
+  courseName: string;            
+  gradeDirectorId?: number | null;
 }
