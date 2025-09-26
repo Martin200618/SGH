@@ -153,6 +153,8 @@ public class TeacherController {
         try {
             service.delete(id);
             return ResponseEntity.ok(new responseDTO("OK", "Docente eliminado correctamente"));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(new responseDTO("ERROR", e.getMessage()));
         } catch (DataIntegrityViolationException e) {
             return ResponseEntity.badRequest().body(new responseDTO("ERROR", "No se puede eliminar el docente porque tiene dependencias"));
         } catch (Exception e) {

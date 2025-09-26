@@ -3,8 +3,10 @@ package com.horarios.SGH.Service;
 import com.horarios.SGH.DTO.TeacherDTO;
 import com.horarios.SGH.Model.TeacherAvailability;
 import com.horarios.SGH.Model.TeacherSubject;
+import com.horarios.SGH.Model.schedule;
 import com.horarios.SGH.Model.subjects;
 import com.horarios.SGH.Model.teachers;
+import com.horarios.SGH.Repository.IScheduleRepository;
 import com.horarios.SGH.Repository.ITeacherAvailabilityRepository;
 import com.horarios.SGH.Repository.Isubjects;
 import com.horarios.SGH.Repository.Iteachers;
@@ -23,6 +25,7 @@ public class TeacherService implements ITeacherService {
     private final Iteachers teacherRepo;
     private final TeacherSubjectRepository teacherSubjectRepo;
     private final ITeacherAvailabilityRepository availabilityRepo;
+    private final IScheduleRepository scheduleRepo;
 
     /**
      * Crea un docente. Si se envía subjectId, crea también la relación TeacherSubject.
@@ -144,9 +147,21 @@ public class TeacherService implements ITeacherService {
     }
 
     public void delete(int id) {
-        // Eliminar relaciones TeacherSubject primero
+        // Verificar si el profesor tiene horarios asignados
+        List<schedule> schedules = scheduleRepo.findByTeacherId(id);
+        if (!schedules.isEmpty()) {
+            throw new IllegalStateException("No se puede eliminar el docente porque tiene horarios asignados");
+        }
+
+        // Eliminar disponibilidad del profesor
+        List<TeacherAvailability> availabilities = availabilityRepo.findByTeacher_Id(id);
+        availabilityRepo.deleteAll(availabilities);
+
+        // Eliminar relaciones TeacherSubject
         List<TeacherSubject> tsList = teacherSubjectRepo.findByTeacher_Id(id);
         teacherSubjectRepo.deleteAll(tsList);
+
+        // Finalmente eliminar el profesor
         teacherRepo.deleteById(id);
     }
 
