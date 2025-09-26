@@ -61,10 +61,14 @@ export default function Sidebar() {
 
   const menuItems = [
     { icon: Home, label: "General", path: "/dashboard" },
-    {
+    { icon: Users, label: "Profesores", path: "/dashboard/professor" },
+    { icon: BookOpen, label: "Materias", path: "/dashboard/subject" },
+    { icon: Library, label: "Cursos", path: "/dashboard/course" },
+        {
       icon: Calendar,
       label: "Horarios",
       children: [
+        { label: "Generar Horario", path: "/dashboard/schedule" },
         {
           label: "Horarios cursos",
           path: "/dashboard/schedule/scheduleCourse",
@@ -73,12 +77,8 @@ export default function Sidebar() {
           label: "Horarios Profesores",
           path: "/dashboard/schedule/scheduleProfessor",
         },
-        { label: "Generar Horario", path: "/dashboard/schedule" },
       ],
     },
-    { icon: Users, label: "Profesores", path: "/dashboard/professor" },
-    { icon: BookOpen, label: "Materias", path: "/dashboard/subject" },
-    { icon: Library, label: "Cursos", path: "/dashboard/course" },
   ];
 
   return (
