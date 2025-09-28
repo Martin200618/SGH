@@ -1,4 +1,4 @@
-package com.horarios.SGH.Service;
+package com.horarios.SGH.IService;
 
 import com.horarios.SGH.DTO.LoginRequestDTO;
 import com.horarios.SGH.DTO.LoginResponseDTO;

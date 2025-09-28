@@ -1,4 +1,4 @@
-package com.horarios.SGH.Service;
+package com.horarios.SGH.IService;
 
 import com.horarios.SGH.DTO.ScheduleHistoryDTO;
 import org.springframework.data.domain.Page;

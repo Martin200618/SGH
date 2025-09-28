@@ -1,6 +1,7 @@
 package com.horarios.SGH.Service;
 
 import com.horarios.SGH.DTO.ScheduleHistoryDTO;
+import com.horarios.SGH.IService.IScheduleGenerationService;
 import com.horarios.SGH.Model.*;
 import com.horarios.SGH.Model.schedule;
 import com.horarios.SGH.Repository.*;

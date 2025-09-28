@@ -1,6 +1,7 @@
 package com.horarios.SGH.Service;
 
 import com.horarios.SGH.DTO.ScheduleDTO;
+import com.horarios.SGH.IService.IScheduleService;
 import com.horarios.SGH.Model.Days;
 import com.horarios.SGH.Model.TeacherAvailability;
 import com.horarios.SGH.Model.schedule;

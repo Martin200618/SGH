@@ -1,4 +1,4 @@
-package com.horarios.SGH.Service;
+package com.horarios.SGH.IService;
 
 import com.horarios.SGH.DTO.CourseDTO;
 import java.util.List;

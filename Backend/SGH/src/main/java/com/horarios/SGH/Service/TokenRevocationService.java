@@ -2,6 +2,8 @@ package com.horarios.SGH.Service;
 
 import org.springframework.stereotype.Service;
 
+import com.horarios.SGH.IService.ITokenRevocationService;
+
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 

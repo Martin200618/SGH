@@ -1,6 +1,7 @@
 package com.horarios.SGH.Service;
 
 import com.horarios.SGH.DTO.ScheduleHistoryDTO;
+import com.horarios.SGH.IService.IScheduleHistoryService;
 import com.horarios.SGH.Model.schedule_history;
 import com.horarios.SGH.Repository.IScheduleHistory;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.horarios.SGH.Service;
+package com.horarios.SGH.IService;
 
 public interface ITokenRevocationService {
     void revokeToken(String token);

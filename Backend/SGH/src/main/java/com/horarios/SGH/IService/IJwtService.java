@@ -1,4 +1,4 @@
-package com.horarios.SGH.Service;
+package com.horarios.SGH.IService;
 
 import org.springframework.security.core.userdetails.UserDetails;
 import java.util.function.Function;

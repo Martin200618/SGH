@@ -1,8 +1,8 @@
 package com.horarios.SGH.Controller;
 
 import com.horarios.SGH.DTO.ScheduleHistoryDTO;
-import com.horarios.SGH.Service.IScheduleGenerationService;
-import com.horarios.SGH.Service.IScheduleHistoryService;
+import com.horarios.SGH.IService.IScheduleGenerationService;
+import com.horarios.SGH.IService.IScheduleHistoryService;
 import com.horarios.SGH.Service.ScheduleExportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

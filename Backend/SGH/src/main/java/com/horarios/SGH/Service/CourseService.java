@@ -1,6 +1,7 @@
 package com.horarios.SGH.Service;
 
 import com.horarios.SGH.DTO.CourseDTO;
+import com.horarios.SGH.IService.ICourseService;
 import com.horarios.SGH.Model.TeacherSubject;
 import com.horarios.SGH.Model.courses;
 import com.horarios.SGH.Model.subjects;

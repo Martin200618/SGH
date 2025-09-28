@@ -1,4 +1,4 @@
-package com.horarios.SGH.Service;
+package com.horarios.SGH.IService;
 
 public interface IScheduleExportService {
     byte[] exportToPdfByCourse(Integer courseId) throws Exception;
