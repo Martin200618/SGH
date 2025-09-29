@@ -5,45 +5,53 @@ import { Eye, EyeOff, User, Lock } from "lucide-react";
 interface LoginFormProps {
   onBack?: () => void;
   onSubmit?: (data: { user: string; password: string; acceptTerms: boolean }) => void;
+  authError?: string;
+  successMessage?: string;
 }
 
-export default function LoginForm({ onBack, onSubmit }: LoginFormProps) {
+export default function LoginForm({ onBack, onSubmit, authError, successMessage }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [userError, setUserError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    // Limpiar errores previos
+    setUserError("");
+    setPasswordError("");
+
+    let hasError = false;
+
     if (!user.trim()) {
-      alert('El nombre de usuario es obligatorio');
-      return;
+      setUserError('El nombre de usuario es obligatorio');
+      hasError = true;
+    } else if (user.length > 50) {
+      setUserError('El nombre de usuario no puede exceder los 50 caracteres');
+      hasError = true;
+    } else if (!/^[a-z]*$/.test(user)) {
+      setUserError('El nombre de usuario solo puede contener letras minúsculas');
+      hasError = true;
     }
-    if (user.length > 50) {
-      alert('El nombre de usuario no puede exceder los 50 caracteres');
-      return;
-    }
-    if (!/^[a-z]*$/.test(user)) {
-      alert('El nombre de usuario solo puede contener letras minúsculas');
-      return;
-    }
+
     if (!password) {
-      alert('La contraseña es obligatoria');
-      return;
+      setPasswordError('La contraseña es obligatoria');
+      hasError = true;
+    } else if (password.length < 6) {
+      setPasswordError('La contraseña debe tener al menos 6 caracteres');
+      hasError = true;
+    } else if (password.length > 100) {
+      setPasswordError('La contraseña no puede exceder los 100 caracteres');
+      hasError = true;
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      setPasswordError('La contraseña debe contener al menos una letra minúscula, una mayúscula y un número');
+      hasError = true;
     }
-    if (password.length < 6) {
-      alert('La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
-    if (password.length > 100) {
-      alert('La contraseña no puede exceder los 100 caracteres');
-      return;
-    }
-    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-      alert('La contraseña debe contener al menos una letra minúscula, una mayúscula y un número');
-      return;
-    }
+
+    if (hasError) return;
 
     setIsLoading(true);
 
@@ -90,10 +98,18 @@ export default function LoginForm({ onBack, onSubmit }: LoginFormProps) {
               type="text"
               placeholder="Usuario"
               value={user}
-              onChange={(e) => setUser(e.target.value)}
-              className="w-full pl-12 pr-4 py-2.5 sm:py-3 rounded-lg bg-gray-800/70 border border-gray-600/50 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              onChange={(e) => {
+                setUser(e.target.value);
+                if (userError) setUserError(""); // Limpiar error al escribir
+              }}
+              className={`w-full pl-12 pr-4 py-2.5 sm:py-3 rounded-lg bg-gray-800/70 border text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all ${
+                (userError || authError) ? 'border-red-500 focus:ring-red-500' : 'border-gray-600/50 focus:ring-blue-500'
+              }`}
             />
           </div>
+          {(userError || authError) && (
+            <p className="text-red-400 text-sm mt-1">{userError || authError}</p>
+          )}
 
           {/* Contraseña */}
           <div className="relative">
@@ -105,8 +121,13 @@ export default function LoginForm({ onBack, onSubmit }: LoginFormProps) {
               type={showPassword ? "text" : "password"}
               placeholder="Contraseña"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-12 pr-12 py-2.5 sm:py-3 rounded-lg bg-gray-800/70 border border-gray-600/50 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (passwordError) setPasswordError(""); // Limpiar error al escribir
+              }}
+              className={`w-full pl-12 pr-12 py-2.5 sm:py-3 rounded-lg bg-gray-800/70 border text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all ${
+                (passwordError || authError) ? 'border-red-500 focus:ring-red-500' : 'border-gray-600/50 focus:ring-blue-500'
+              }`}
             />
             <button
               type="button"
@@ -116,6 +137,9 @@ export default function LoginForm({ onBack, onSubmit }: LoginFormProps) {
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
+          {passwordError && (
+            <p className="text-red-400 text-sm mt-1">{passwordError}</p>
+          )}
 
           {/* Botón Ingresar */}
           <button
@@ -133,6 +157,10 @@ export default function LoginForm({ onBack, onSubmit }: LoginFormProps) {
             )}
           </button>
         </form>
+
+        {successMessage && (
+          <p className="text-green-400 text-sm mt-4 text-center">{successMessage}</p>
+        )}
       </div>
 
       {/* Footer */}

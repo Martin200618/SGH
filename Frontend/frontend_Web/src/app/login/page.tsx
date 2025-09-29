@@ -1,16 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 import LoginForm from "@/components/login/LoginForm";
 import { login } from "@/api/services/userApi";
-import { Link } from "lucide-react";
 import Cookies from 'js-cookie';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [errorMessage, setErrorMessage] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
 
       
@@ -22,38 +21,35 @@ export default function LoginPage() {
 
   const handleLogin = async ({ user, password }: LoginFormValues) => {
     if (!user || !password) {
-      setErrorMessage("Por favor ingresa usuario y contraseña.");
+      setAuthError("Por favor ingresa usuario y contraseña.");
       return;
     }
 
     try {
-      setErrorMessage("");
+      setAuthError("");
+      setSuccessMessage("");
       const data = await login(user, password);
 
       if (data.token) {
         Cookies.set("token", data.token, { expires: 1 }); // Expira en 1 día
-        router.push("/dashboard");
+        setSuccessMessage("¡Bienvenido! Iniciando sesión...");
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 2000);
       } else {
-        setErrorMessage("No se recibió token. Verifica tus credenciales.");
+        setAuthError("No se recibió token. Verifica tus credenciales.");
       }
     } catch (err: any) {
       if (err.response?.status === 401) {
-        setErrorMessage("Usuario o contraseña incorrectos.");
+        setAuthError("Usuario o contraseña incorrectos.");
       } else if (err.response?.data?.message) {
-        setErrorMessage(err.response.data.message);
+        setAuthError(err.response.data.message);
       } else {
-        setErrorMessage("Error al iniciar sesión. Intenta nuevamente.");
+        setAuthError("Usuario o contraseña incorrectos.");
       }
     }
   };
 
-  // 🔹 Hace que el mensaje desaparezca después de 3 segundos
-  useEffect(() => {
-    if (errorMessage) {
-      const timer = setTimeout(() => setErrorMessage(""), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [errorMessage]);
 
   return (
     <div
@@ -67,25 +63,8 @@ export default function LoginPage() {
         Regresar
       </button>
 
-      {/* 🔹 Animación del mensaje */}
-      <AnimatePresence>
-        {errorMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="fixed top-5 left-1/2 -translate-x-1/2 z-50 
-                 bg-red-100 text-red-700 px-4 py-2 
-                 rounded-lg shadow-md border border-red-300 
-                 text-sm sm:text-base max-w-xs sm:max-w-md text-center"
-          >
-            {errorMessage}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      <LoginForm onSubmit={handleLogin} />
+      <LoginForm onSubmit={handleLogin} authError={authError} successMessage={successMessage} />
     </div>
   );
 }

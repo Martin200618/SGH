@@ -86,99 +86,15 @@ const getScheduleForTimeAndDay = (schedules: Schedule[], time: string, day: stri
   return schedules.find(s => s.startTime.startsWith(scheduleTime) && s.day === day);
 };
 
-const renderScheduleTable = (schedules: Schedule[], courseName: string, key: string) => {
-  const times = generateTimes(schedules);
-  const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-
-  return (
-    <div key={key} className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-      <div className="p-4 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-gray-800">{courseName}</h3>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => exportSchedule('pdf', 'course', parseInt(key))}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="Exportar PDF"
-          >
-            <FileText className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => exportSchedule('excel', 'course', parseInt(key))}
-            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-            title="Exportar Excel"
-          >
-            <FileSpreadsheet className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => exportSchedule('image', 'course', parseInt(key))}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            title="Exportar Imagen"
-          >
-            <Image className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-100 border-b border-gray-200">
-            <tr>
-              <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider min-w-32">
-                Tiempo
-              </th>
-              {days.map((day) => (
-                <th key={day} className="px-6 py-4 text-center text-sm font-medium text-gray-700 uppercase tracking-wider min-w-36">
-                  {day}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {times.map((time, index) => (
-              <tr key={index} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {time}
-                </td>
-                {days.map((day) => {
-                  const schedule = getScheduleForTimeAndDay(schedules, time, day);
-                  const isLunchTime = time === "12:00 PM - 1:00 PM";
-                  const isBreak = time === "9:00 AM - 9:30 AM";
-                  const content = schedule ? `${schedule.teacherName || 'Profesor'}/${schedule.subjectName || 'Materia'}` : isLunchTime ? "Almuerzo" : isBreak ? "Descanso" : "";
-
-                  return (
-                    <td
-                      key={day}
-                      className={`px-6 py-4 text-center text-sm ${
-                        isLunchTime
-                          ? 'bg-orange-100 text-orange-800 font-medium'
-                          : isBreak
-                            ? 'bg-yellow-100 text-yellow-800 font-medium'
-                            : content && schedule
-                              ? 'bg-blue-100 text-blue-800 font-medium'
-                              : 'text-gray-400'
-                      }`}
-                    >
-                      {content}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
-
-export default function ScheduleCoursePage() {
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const router = useRouter();
+  export default function ScheduleCoursePage() {
+    const [schedules, setSchedules] = useState<Schedule[]>([]);
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+    const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const router = useRouter();
 
   useEffect(() => {
     const token = Cookies.get('token');
@@ -272,6 +188,90 @@ export default function ScheduleCoursePage() {
       );
       setFilteredCourses(filtered);
     }
+  };
+
+  const renderScheduleTable = (schedules: Schedule[], courseName: string, key: string) => {
+    const times = generateTimes(schedules);
+    const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+
+    return (
+      <div key={key} className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+        <div className="p-4 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
+          <h3 className="text-lg font-semibold text-gray-800">{courseName}</h3>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => exportSchedule('pdf', 'course', parseInt(key))}
+              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              title="Exportar PDF"
+            >
+              <FileText className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => exportSchedule('excel', 'course', parseInt(key))}
+              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+              title="Exportar Excel"
+            >
+              <FileSpreadsheet className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => exportSchedule('image', 'course', parseInt(key))}
+              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              title="Exportar Imagen"
+            >
+              <Image className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-100 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider min-w-32">
+                  Tiempo
+                </th>
+                {days.map((day) => (
+                  <th key={day} className="px-6 py-4 text-center text-sm font-medium text-gray-700 uppercase tracking-wider min-w-36">
+                    {day}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {times.map((time, index) => (
+                <tr key={index} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {time}
+                  </td>
+                  {days.map((day) => {
+                    const schedule = getScheduleForTimeAndDay(schedules, time, day);
+                    const isLunchTime = time === "12:00 PM - 1:00 PM";
+                    const isBreak = time === "9:00 AM - 9:30 AM";
+                    const content = schedule ? `${schedule.teacherName || 'Profesor'}/${schedule.subjectName || 'Materia'}` : isLunchTime ? "Almuerzo" : isBreak ? "Descanso" : "";
+
+                    return (
+                      <td
+                        key={day}
+                        className={`px-6 py-4 text-center text-sm ${
+                          isLunchTime
+                            ? 'bg-orange-100 text-orange-800 font-medium'
+                            : isBreak
+                              ? 'bg-yellow-100 text-yellow-800 font-medium'
+                              : content && schedule
+                                ? 'bg-blue-100 text-blue-800 font-medium'
+                                : 'text-gray-400'
+                        }`}
+                      >
+                        {content}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
   };
 
   return (
