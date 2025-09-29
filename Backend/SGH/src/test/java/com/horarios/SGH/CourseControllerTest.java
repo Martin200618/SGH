@@ -36,11 +36,11 @@ public class CourseControllerTest extends BaseControllerTest {
     @Test
     public void testCreateCourse() throws Exception {
         CourseDTO input = new CourseDTO();
-        input.setCourseName("Matemáticas 101");
+        input.setCourseName("1A");
 
         CourseDTO output = new CourseDTO();
         output.setCourseId(1);
-        output.setCourseName("Matemáticas 101");
+        output.setCourseName("1A");
 
         when(courseService.create(any(CourseDTO.class))).thenReturn(output);
 
@@ -48,19 +48,19 @@ public class CourseControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(input)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.courseId").value(1))
-                .andExpect(jsonPath("$.courseName").value("Matemáticas 101"));
+                .andExpect(jsonPath("$.status").value("OK"))
+                .andExpect(jsonPath("$.message").value("Curso creado correctamente"));
     }
 
     @Test
     public void testGetAllCourses() throws Exception {
         CourseDTO course1 = new CourseDTO();
         course1.setCourseId(1);
-        course1.setCourseName("Matemáticas 101");
+        course1.setCourseName("1A");
 
         CourseDTO course2 = new CourseDTO();
         course2.setCourseId(2);
-        course2.setCourseName("Física 101");
+        course2.setCourseName("2B");
 
         List<CourseDTO> courses = Arrays.asList(course1, course2);
 
@@ -69,31 +69,31 @@ public class CourseControllerTest extends BaseControllerTest {
         mockMvc.perform(get("/courses"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].courseName").value("Matemáticas 101"));
+                .andExpect(jsonPath("$[0].courseName").value("1A"));
     }
 
     @Test
     public void testGetCourseById() throws Exception {
         CourseDTO course = new CourseDTO();
         course.setCourseId(1);
-        course.setCourseName("Matemáticas 101");
+        course.setCourseName("1A");
 
         when(courseService.getById(1)).thenReturn(course);
 
         mockMvc.perform(get("/courses/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.courseId").value(1))
-                .andExpect(jsonPath("$.courseName").value("Matemáticas 101"));
+                .andExpect(jsonPath("$.courseName").value("1A"));
     }
 
     @Test
     public void testUpdateCourse() throws Exception {
         CourseDTO input = new CourseDTO();
-        input.setCourseName("Matemáticas Avanzadas");
+        input.setCourseName("2B");
 
         CourseDTO output = new CourseDTO();
         output.setCourseId(1);
-        output.setCourseName("Matemáticas Avanzadas");
+        output.setCourseName("2B");
 
         when(courseService.update(eq(1), any(CourseDTO.class))).thenReturn(output);
 
@@ -101,7 +101,8 @@ public class CourseControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(input)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.courseName").value("Matemáticas Avanzadas"));
+                .andExpect(jsonPath("$.status").value("OK"))
+                .andExpect(jsonPath("$.message").value("Curso actualizado correctamente"));
     }
 
     @Test

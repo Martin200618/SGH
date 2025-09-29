@@ -15,8 +15,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
@@ -87,5 +89,51 @@ public class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"username\":\"testuser\",\"password\":\"password\"}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testLogoutSuccess() throws Exception {
+        doNothing().when(tokenRevocationService).revokeToken("jwt-token");
+
+        mockMvc.perform(post("/auth/logout")
+                .header("Authorization", "Bearer jwt-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Sesión cerrada exitosamente"));
+    }
+
+    @Test
+    public void testLogoutNoToken() throws Exception {
+        mockMvc.perform(post("/auth/logout"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void testGetProfile() throws Exception {
+        com.horarios.SGH.Model.users user = new com.horarios.SGH.Model.users(1, "testuser", "password");
+        when(authService.getProfile()).thenReturn(user);
+
+        mockMvc.perform(get("/auth/profile"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("testuser"));
+    }
+
+    @Test
+    public void testUpdateProfileSuccess() throws Exception {
+        doNothing().when(authService).updateUserName("newname");
+
+        mockMvc.perform(put("/auth/profile")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"newname\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Nombre actualizado correctamente"));
+    }
+
+    @Test
+    public void testUpdateProfileEmptyName() throws Exception {
+        mockMvc.perform(put("/auth/profile")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("El nombre no puede estar vacío"));
     }
 }
