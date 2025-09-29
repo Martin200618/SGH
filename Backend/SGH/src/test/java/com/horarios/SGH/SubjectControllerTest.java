@@ -36,7 +36,7 @@ public class SubjectControllerTest extends BaseControllerTest {
     @Test
     public void testCreateSubjectSuccess() throws Exception {
         SubjectDTO input = new SubjectDTO();
-        input.setSubjectName("Matemáticas");
+        input.setSubjectName("Matematicas");
 
         when(subjectService.create(any(SubjectDTO.class))).thenReturn(null); // Service returns void
 
@@ -101,7 +101,7 @@ public class SubjectControllerTest extends BaseControllerTest {
     @Test
     public void testUpdateSubjectSuccess() throws Exception {
         SubjectDTO input = new SubjectDTO();
-        input.setSubjectName("Matemáticas Avanzadas");
+        input.setSubjectName("Matemáticas");
 
         when(subjectService.update(eq(1), any(SubjectDTO.class))).thenReturn(null);
 

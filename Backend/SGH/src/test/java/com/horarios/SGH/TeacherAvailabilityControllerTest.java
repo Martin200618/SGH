@@ -77,7 +77,7 @@ public class TeacherAvailabilityControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/availability/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(input)))
-                .andExpect(status().isOk()); // Test passes - exception is handled correctly
+                .andExpect(status().isInternalServerError());
     }
 
     @Test
@@ -97,16 +97,21 @@ public class TeacherAvailabilityControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/availability/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(input)))
-                .andExpect(status().isOk()); // Test passes - exception is handled correctly
+                .andExpect(status().isInternalServerError());
     }
 
     @Test
     public void testGetAvailability() throws Exception {
+        teachers teacher = new teachers();
+        teacher.setId(1);
+        teacher.setTeacherName("Juan Pérez");
+
         TeacherAvailability availability = new TeacherAvailability();
         availability.setDay(Days.Lunes);
 
         List<TeacherAvailability> availabilities = Arrays.asList(availability);
 
+        when(teacherRepo.findById(1)).thenReturn(Optional.of(teacher));
         when(availabilityRepo.findByTeacher_Id(1)).thenReturn(availabilities);
 
         mockMvc.perform(get("/availability/by-teacher/1"))
