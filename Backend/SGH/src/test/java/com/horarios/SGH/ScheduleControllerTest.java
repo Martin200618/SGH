@@ -122,4 +122,95 @@ public class ScheduleControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition", "attachment; filename=horario_general_completo.pdf"));
     }
+
+    @Test
+    public void testExportPdfByTeacher() throws Exception {
+        byte[] pdfData = "PDF Teacher Content".getBytes();
+
+        when(exportService.exportToPdfByTeacher(1)).thenReturn(pdfData);
+
+        mockMvc.perform(get("/schedules/pdf/teacher/1"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=horario_profesor_1.pdf"))
+                .andExpect(content().contentType(MediaType.APPLICATION_PDF));
+    }
+
+    @Test
+    public void testExportExcelByCourse() throws Exception {
+        byte[] excelData = "Excel Course Content".getBytes();
+
+        when(exportService.exportToExcelByCourse(1)).thenReturn(excelData);
+
+        mockMvc.perform(get("/schedules/excel/course/1"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=horario_curso_1.xlsx"))
+                .andExpect(content().contentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+    }
+
+    @Test
+    public void testExportImageByTeacher() throws Exception {
+        byte[] imageData = "Image Teacher Content".getBytes();
+
+        when(exportService.exportToImageByTeacher(1)).thenReturn(imageData);
+
+        mockMvc.perform(get("/schedules/image/teacher/1"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=horario_profesor_1.png"))
+                .andExpect(content().contentType(MediaType.IMAGE_PNG));
+    }
+
+    @Test
+    public void testExportPdfAllTeachers() throws Exception {
+        byte[] pdfData = "PDF All Teachers Content".getBytes();
+
+        when(exportService.exportToPdfAllTeachersSchedules()).thenReturn(pdfData);
+
+        mockMvc.perform(get("/schedules/pdf/all-teachers"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=horario_profesores_completo.pdf"));
+    }
+
+    @Test
+    public void testExportExcelAll() throws Exception {
+        byte[] excelData = "Excel All Content".getBytes();
+
+        when(exportService.exportToExcelAllSchedules()).thenReturn(excelData);
+
+        mockMvc.perform(get("/schedules/excel/all"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=horario_general_completo.xlsx"));
+    }
+
+    @Test
+    public void testExportExcelAllTeachers() throws Exception {
+        byte[] excelData = "Excel All Teachers Content".getBytes();
+
+        when(exportService.exportToExcelAllTeachersSchedules()).thenReturn(excelData);
+
+        mockMvc.perform(get("/schedules/excel/all-teachers"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=horario_profesores_completo.xlsx"));
+    }
+
+    @Test
+    public void testExportImageAll() throws Exception {
+        byte[] imageData = "Image All Content".getBytes();
+
+        when(exportService.exportToImageAllSchedules()).thenReturn(imageData);
+
+        mockMvc.perform(get("/schedules/image/all"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=horario_general_completo.png"));
+    }
+
+    @Test
+    public void testExportImageAllTeachers() throws Exception {
+        byte[] imageData = "Image All Teachers Content".getBytes();
+
+        when(exportService.exportToImageAllTeachersSchedules()).thenReturn(imageData);
+
+        mockMvc.perform(get("/schedules/image/all-teachers"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", "attachment; filename=horario_profesores_completo.png"));
+    }
 }
