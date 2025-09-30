@@ -8,10 +8,16 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@expo/vector-icons": "^15.0.2",
+    "@mui/material": "^7.3.2",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/drawer": "^7.5.8",
@@ -28,8 +34,8 @@
     "expo-symbols": "~1.0.7",
     "expo-system-ui": "~6.0.7",
     "expo-web-browser": "~15.0.7",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "react-native": "0.81.4",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-modal": "^14.0.0-rc.1",
@@ -38,13 +44,19 @@
     "react-native-screens": "~4.16.0",
     "react-native-vector-icons": "^10.3.0",
     "react-native-web": "~0.21.0",
-    "react-native-worklets": "0.5.1"
+    "react-native-worklets": "0.5.1",
+    "react-test-renderer": "^19.1.1"
   },
   "devDependencies": {
     "@react-native-community/cli": "latest",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.1.0",
+    "@types/react-dom": "^19.1.9",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "jest-expo": "^54.0.12",
     "typescript": "~5.9.2"
   },
   "private": true
