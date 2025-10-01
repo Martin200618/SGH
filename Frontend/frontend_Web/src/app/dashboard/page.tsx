@@ -4,24 +4,22 @@ import { useEffect, useState } from "react";
 import Header from "@/components/dashboard/Header";
 import TeacherCard from "@/components/dashboard/TeacherCard";
 import { getAllTeachers, Teacher } from "@/api/services/teacherApi";
-import Cookies from 'js-cookie';
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+
 export default function DashboardPage() {
   const [teachers, setTeachers] = useState<{ name: string; stats: { materias: number; cursos: number; horas: number } }[]>([]);
-  const router = useRouter();
-  useEffect(() => {
-    const token = Cookies.get('token');
+  const { isAuthenticated } = useAuth();
 
-    // Si no hay token, redirigir al login
-    if (!token) {
-      router.push("/login");
-    }
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
     const fetchTeachers = async () => {
       try {
         const teachersData: Teacher[] = await getAllTeachers();
+        // TODO: Obtener stats reales desde la API cuando esté disponible
         const mappedTeachers = teachersData.map((teacher) => ({
           name: teacher.teacherName,
-          stats: { materias: 1, cursos: 1, horas: 25 }, // Stats hardcodeados por ahora
+          stats: { materias: 1, cursos: 1, horas: 25 }, // Temporal: implementar API de stats
         }));
         setTeachers(mappedTeachers);
       } catch (error) {
@@ -30,7 +28,7 @@ export default function DashboardPage() {
     };
 
     fetchTeachers();
-  }, []);
+  }, [isAuthenticated]);
 
   return (
     <>

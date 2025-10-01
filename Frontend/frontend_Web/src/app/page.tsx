@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Hero from "../components/Hero";
+import Footer from "../components/Footer";
 
 export default function Home() {
   return (
@@ -16,6 +17,9 @@ export default function Home() {
 
       {/* Componente Hero */}
       <Hero />
+
+      {/* Componente Footer */}
+      <Footer />
     </div>
   );
 }

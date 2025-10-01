@@ -7,7 +7,6 @@ import {
   Users,
   BookOpen,
   LogOut,
-  Loader2,
   GraduationCap,
   Library,
   ChevronDown,
@@ -15,7 +14,22 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import Cookies from 'js-cookie';
+import { useAuth } from "@/hooks/useAuth";
+import LogoutModal from "./LogoutModal";
 
+/**
+ * Componente de navegación lateral (Sidebar) del dashboard
+ *
+ * Proporciona navegación entre diferentes secciones del dashboard con un menú
+ * jerárquico. Incluye funcionalidad de logout con modal de confirmación.
+ *
+ * @returns {JSX.Element} El sidebar de navegación
+ *
+ * @example
+ * ```tsx
+ * <Sidebar />
+ * ```
+ */
 export default function Sidebar() {
   const [showModal, setShowModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -24,6 +38,7 @@ export default function Sidebar() {
 
   const router = useRouter();
   const pathname = usePathname();
+  const { logout } = useAuth();
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -42,11 +57,9 @@ export default function Sidebar() {
     } catch (error) {
       console.error("Error during logout:", error);
     } finally {
-      // Remove the authentication token
-      Cookies.remove("token");
+      logout();
       setIsLoggingOut(false);
       setShowModal(false);
-      router.push("/login");
     }
   };
 
@@ -172,42 +185,12 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-96 mx-4">
-            {!isLoggingOut ? (
-              <>
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">
-                  Cerrar Sesión
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  ¿Estás seguro de que quieres cerrar la sesión?
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="flex-1 px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="flex-1 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white transition-colors"
-                  >
-                    Aceptar
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-col items-center py-6">
-                <Loader2 className="animate-spin text-red-500 mb-3" size={32} />
-                <p className="text-gray-700 font-medium">Cerrando sesión...</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <LogoutModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onConfirm={handleLogout}
+        isLoggingOut={isLoggingOut}
+      />
     </>
   );
 }

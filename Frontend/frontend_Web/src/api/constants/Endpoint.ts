@@ -1,4 +1,9 @@
-export const API_BASE_URL = "http://localhost:8085";
+import { config } from '../../config/env';
+
+/**
+ * Endpoints de la API organizados por módulo
+ */
+export const API_BASE_URL = config.apiBaseUrl;
 
 export const USER_END_POINTS = `${API_BASE_URL}/auth`;
 export const TEACHER_END_POINTS = `${API_BASE_URL}/teachers`;
