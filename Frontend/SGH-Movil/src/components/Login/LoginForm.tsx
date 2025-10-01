@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, TextInput, TouchableOpacity, Text, Image } from 'react-native';
 import { styles } from '../../styles/loginStyles';
 import { useAuth } from '../../context/AuthContext';
@@ -15,10 +15,15 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertTitle, setAlertTitle] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
+
+  const togglePasswordVisibility = useCallback(() => {
+    setIsPasswordVisible(prev => !prev);
+  }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -70,7 +75,12 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
       </View>
 
       {/* Contraseña */}
-      <PasswordInput value={password} onChange={setPassword} />
+      <PasswordInput
+        value={password}
+        onChange={setPassword}
+        isVisible={isPasswordVisible}
+        onToggle={togglePasswordVisibility}
+      />
 
       {/* Botón login */}
       <TouchableOpacity

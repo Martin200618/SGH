@@ -1,23 +1,30 @@
 import React, { memo } from 'react';
-import { View, TextInput, Image } from 'react-native';
+import { View, TextInput, TouchableOpacity, Image } from 'react-native';
 import { styles } from '../../styles/loginStyles';
 
 interface PasswordInputProps {
   value: string;
   onChange: (text: string) => void;
+  isVisible: boolean;
+  onToggle: () => void;
 }
 
-function PasswordInputComponent({ value, onChange }: PasswordInputProps) {
+function PasswordInputComponent({ value, onChange, isVisible, onToggle }: PasswordInputProps) {
   return (
     <View style={styles.inputWrapper}>
-      <Image source={require('../../assets/images/lock.png')} style={styles.inputIcon} />
+      <TouchableOpacity onPress={onToggle} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <Image
+          source={isVisible ? require('../../assets/images/eye.png') : require('../../assets/images/eye-off.png')}
+          style={styles.inputIcon}
+        />
+      </TouchableOpacity>
       <TextInput
         style={styles.input}
         placeholder="Contraseña"
         placeholderTextColor="#999"
         value={value}
         onChangeText={onChange}
-        secureTextEntry
+        secureTextEntry={!isVisible}
       />
     </View>
   );
