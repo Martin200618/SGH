@@ -1,5 +1,6 @@
 import { COURSE_END_POINTS } from "../constants/Endpoint";
-import Cookies from 'js-cookie';
+import { getAuthHeaders } from "../utils/authUtils";
+import { log } from "../../utils/logger";
 
 export interface Course {
   courseId: number;
@@ -10,7 +11,7 @@ export interface Course {
   gradeDirectorId?: number;
 }
 
-export interface CreateCourseRequest {
+export interface CourseRequest {
   courseName: string;
   teacherSubjectId?: number;
   teacherId?: number;
@@ -18,22 +19,8 @@ export interface CreateCourseRequest {
   gradeDirectorId?: number;
 }
 
-export interface UpdateCourseRequest {
-  courseName: string;
-  teacherSubjectId?: number;
-  teacherId?: number;
-  subjectId?: number;
-  gradeDirectorId?: number;
-}
-
-const getAuthHeaders = () => {
-  const token = Cookies.get("token");
-  console.log("Token en cookies:", token);
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-};
+export type CreateCourseRequest = Omit<CourseRequest, 'courseId'>;
+export type UpdateCourseRequest = CourseRequest;
 
 export const getAllCourses = async (): Promise<Course[]> => {
   try {
@@ -52,7 +39,7 @@ export const getAllCourses = async (): Promise<Course[]> => {
     const data = await response.json();
     return data;
   } catch (error: any) {
-    console.error("Error al obtener cursos:", error.message);
+    log.error("Error al obtener cursos", error);
     throw error;
   }
 };
@@ -73,55 +60,45 @@ export const createCourse = async (course: CreateCourseRequest): Promise<Course>
     const data = await response.json();
     return data;
   } catch (error: any) {
-    console.error("Error al crear curso:", error.message);
+    log.error("Error al crear curso", error, { course });
     throw error;
   }
 };
 
 export const updateCourse = async (id: number, course: UpdateCourseRequest): Promise<Course> => {
   try {
-    console.log("Actualizando curso con ID:", id, "Datos:", course);
-    const headers = getAuthHeaders();
-    console.log("Headers enviados:", headers);
     const response = await fetch(`${COURSE_END_POINTS}/${id}`, {
       method: "PUT",
-      headers,
+      headers: getAuthHeaders(),
       body: JSON.stringify(course),
     });
-    console.log("Respuesta del servidor:", response.status, response.statusText);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      console.log("Datos de error:", errorData);
       throw new Error(errorData?.message || `Error ${response.status}`);
     }
 
     const data = await response.json();
     return data;
   } catch (error: any) {
-    console.error("Error al actualizar curso:", error.message);
+    log.error("Error al actualizar curso", error, { id, course });
     throw error;
   }
 };
 
 export const deleteCourse = async (id: number): Promise<void> => {
   try {
-    console.log("Eliminando curso con ID:", id);
-    const headers = getAuthHeaders();
-    console.log("Headers enviados:", headers);
     const response = await fetch(`${COURSE_END_POINTS}/${id}`, {
       method: "DELETE",
-      headers,
+      headers: getAuthHeaders(),
     });
-    console.log("Respuesta del servidor:", response.status, response.statusText);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      console.log("Datos de error:", errorData);
       throw new Error(errorData?.message || `Error ${response.status}`);
     }
   } catch (error: any) {
-    console.error("Error al eliminar curso:", error.message);
+    log.error("Error al eliminar curso", error, { id });
     throw error;
   }
 };

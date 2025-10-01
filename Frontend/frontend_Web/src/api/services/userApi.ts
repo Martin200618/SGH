@@ -1,14 +1,8 @@
-const API_URL = "http://localhost:8085/auth";
+import { API_BASE_URL } from "../constants/Endpoint";
+import { getAuthHeaders } from "../utils/authUtils";
+import { log } from "../../utils/logger";
 
-import Cookies from 'js-cookie';
-
-const getAuthHeaders = () => {
-  const token = Cookies.get("token");
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-};
+const API_URL = `${API_BASE_URL}/auth`;
 
 export const login = async (username: string, password: string) => {
   try {
@@ -31,7 +25,7 @@ export const login = async (username: string, password: string) => {
     const data = await response.json();
     return data;
   } catch (error: any) {
-    console.error("Error en login:", error.message);
+    log.error("Error en login", error, { username });
     throw error;
   }
 };
@@ -51,7 +45,7 @@ export const getUserProfile = async () => {
     const data = await response.json();
     return data;
   } catch (error: any) {
-    console.error("Error obteniendo perfil:", error.message);
+    log.error("Error obteniendo perfil de usuario", error);
     throw error;
   }
 };
@@ -72,7 +66,7 @@ export const updateUserName = async (name: string) => {
     const data = await response.json();
     return data;
   } catch (error: any) {
-    console.error("Error actualizando nombre:", error.message);
+    log.error("Error actualizando nombre de usuario", error, { name });
     throw error;
   }
 };

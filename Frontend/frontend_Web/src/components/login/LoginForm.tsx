@@ -55,12 +55,13 @@ export default function LoginForm({ onBack, onSubmit, authError, successMessage 
 
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
       if (onSubmit) {
-        onSubmit({ user, password, acceptTerms: true });
+        await onSubmit({ user, password, acceptTerms: true });
       }
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (

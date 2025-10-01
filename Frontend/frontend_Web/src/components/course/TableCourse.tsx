@@ -57,8 +57,8 @@ const TableCourse = ({ courses, onEdit, onDelete }: TableCourseProps) => {
   };
 
   const sortedCourses = [...courses].sort((a, b) => {
-    const matchA = a.courseName.match(/^([A-Za-z]+)(\d+)/);
-    const matchB = b.courseName.match(/^([A-Za-z]+)(\d+)/);
+    const matchA = a.courseName.match(/^([^0-9]+)(\d+)/);
+    const matchB = b.courseName.match(/^([^0-9]+)(\d+)/);
     const prefixA = matchA ? matchA[1] : '';
     const prefixB = matchB ? matchB[1] : '';
     const numA = matchA ? parseInt(matchA[2]) : 0;
