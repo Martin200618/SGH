@@ -5,6 +5,9 @@ import { useAuth } from '../../context/AuthContext';
 import CustomAlert from './CustomAlert';
 import { PasswordInput } from './PasswordInput';
 
+// Preload images to ensure they appear immediately
+const userIcon = require('../../assets/images/user.png');
+
 interface LoginFormProps {
   onLoginSuccess: () => void; 
 }
@@ -61,7 +64,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
       {/* Usuario */}
       <View style={styles.inputWrapper}>
         <Image
-          source={require('../../assets/images/user.png')}
+          source={userIcon}
           style={styles.inputIcon}
         />
         <TextInput

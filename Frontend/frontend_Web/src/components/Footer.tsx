@@ -60,7 +60,7 @@ const Footer: React.FC = () => {
         {/* Botón para instalar APK */}
         <div className="text-center">
           <a
-            href="/app.apk"
+            href="/apk/SGH.apk"
             download
             className="bg-blue-500 text-white px-6 py-3 rounded-full shadow-md hover:bg-blue-600 transition"
           >

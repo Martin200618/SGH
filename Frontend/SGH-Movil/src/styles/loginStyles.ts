@@ -91,12 +91,14 @@ export const styles = StyleSheet.create({
     height: 35,
     marginRight: 12,
     tintColor: '#666',
+    resizeMode: 'contain',
   },
   eyeIcon: {
     width: 28,
     height: 28,
     marginLeft: 12,
     tintColor: '#666',
+    resizeMode: 'contain',
   },
   input: {
     flex: 1,
